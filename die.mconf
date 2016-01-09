@@ -1,0 +1,6 @@
+feedback=True
+autosave=0
+stage=10700,13100,5150
+motor0=0,0,5150,475
+motor1=4750,13100,5150,475
+motor2=10700,0,5150,475

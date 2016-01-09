@@ -1,0 +1,122 @@
+#!/usr/bin/python2
+
+import stage
+import osc
+import modbus
+import utils
+
+import os.path as path
+import logging
+logging.basicConfig(format='%(asctime)s %(message)s')
+
+from time import sleep
+from liblo import Message
+
+class Motherboard(object):
+    workingDir = '/home/motherboard/motherboard/'
+
+    def __init__(self):
+        self.interval = 0.2 #second
+        logFormat = logging.Formatter('%(asctime)s %(name)s - %(levelname)s: %(message)s')
+        self.log = logging.getLogger('motherboard')
+        self.log.setLevel(logging.INFO)
+        self.destinationInterval = 0.1 # second
+        self.filelog = logging.FileHandler(path.join(Motherboard.workingDir, './log/motherboard.log'))
+        self.filelog.setLevel(logging.INFO)
+        self.filelog.setFormatter(logFormat)
+        self.log.addHandler(self.filelog)
+
+        self.debuglog = logging.FileHandler(path.join(Motherboard.workingDir, './log/motherboard.debug.log'))
+        self.debuglog.setLevel(logging.DEBUG)
+        self.debuglog.setFormatter(logFormat)
+        self.log.addHandler(self.debuglog)
+
+        self.modbus = modbus.ModbusBackend()
+        self.stage = stage.Stage(self.modbus, testMode=False, plot=False, workingDir=Motherboard.workingDir)
+        self.osc = osc.MotherboardServer(self.stage, 7969)
+        self.config = utils.Conf((self.stage, self.osc, self.modbus,), Motherboard.workingDir)
+
+        self.config.log = logging.getLogger('motherboard.conf')
+        self.stage.log = logging.getLogger('motherboard.stage')
+        self.osc.log = logging.getLogger('motherboard.osc')
+        self.modbus.log = logging.getLogger('motherboard.modbus')
+
+        # Share one config file
+        self.stage.config = self.config
+        self.modbus.config = self.config
+        self.osc.config = self.config
+
+        #self.osc.theEye = self.stage.TheEye.oscTarget
+        self.stage.oscTarget = self.osc
+
+        # Load last config on startup
+        #self.loadLastConfig()
+
+    @property
+    def ready(self):
+        if not self.osc.ready:
+            self.log.info('Osc module not ready.')
+            return False
+        if not self.modbus.ready:
+            self.log.info('Modbus module not ready.')
+        if not self.stage.ready:
+            self.log.info('Stage module not ready.')
+            return False
+        return True
+
+    def start(self):
+        self.log.info('Starting main module.')
+        if self.ready:
+            self.osc.start()
+            return True
+        return False
+
+    def run(self):
+        while True:
+            #changer != en is not
+            if(self.stage.sender != None):
+                #self.log.debug("Envoie des positions")
+                rtn = self.stage.getPositions()
+                idMoteur = 0
+                try:
+                    for i in rtn:
+                        returnMsg = Message('/config/stage/getMotor' + str(idMoteur))
+                        returnMsg.add(i)
+                        idMoteur = int(idMoteur) + 1
+                        self.osc.send(self.stage.sender,returnMsg)
+                except Exception:
+                    self.log.info(rtn)
+            positions = self.stage.getPositions()
+            i = 0
+            try:
+                for movidrive in self.stage.movidrive:
+                    if(movidrive.getLockPosition() != None):
+                        difference = movidrive.getLockPosition() - positions[i]
+                        if(difference < self.stage.margeError and difference > self.stage.margeError * -1):
+                            movidrive.positionAtteinte = True
+                            self.log.info("Destination atteinte")
+                            msg = Message('/config/stage/destinationAtteinte')
+                            msg.add(1)
+                            self.osc.send(self.stage.sender,msg)
+            except Exception:
+                self.log.info("Exception recherche destination")
+            sleep(self.interval)
+
+    def loadLastConfig(self):
+        if self.config.hasLastConfig:
+            self.log.info('Loading last config.')
+            self.config.loadLastConfig()
+            return True
+        else:
+            self.log.info('No last config found.')
+            return False
+
+if __name__ == "__main__":
+    # Init motherboard
+    mb = Motherboard()
+    mb.config.loadLastConfig()
+    mb.config.load()
+    # Start motherboard
+    mb.start()
+
+    mb.run()
