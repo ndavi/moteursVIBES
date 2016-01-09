@@ -1,7 +1,0 @@
-feedback=True
-config=./test.cnf
-autosave=0
-stage=14100,7900,7000
-motor0=0,0,7000,475
-motor1=6900,7900,7000,475
-motor2=14100,0,7000,475

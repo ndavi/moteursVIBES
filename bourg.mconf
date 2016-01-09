@@ -1,6 +1,0 @@
-feedback=True
-autosave=0
-stage=11100,9560,7300
-motor0=0,0,7300,475
-motor1=4500,9560,7300,475
-motor2=11100,0,7300,475
