@@ -431,7 +431,6 @@ class Movidrive(object):
         self.unit_id = unit_id
         self.lockPosition = None
         self.isLocked = False
-        self.lastLockPosition = None
         self.positionAtteinte = True
 
     def setLockPosition(self,lockPosition):

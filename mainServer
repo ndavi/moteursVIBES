@@ -3,7 +3,6 @@
 import stage
 import osc
 import modbus
-import utils
 
 import os.path as path
 import logging
@@ -21,6 +20,7 @@ class Motherboard(object):
         self.log = logging.getLogger('motherboard')
         self.log.setLevel(logging.INFO)
         self.destinationInterval = 0.1 # second
+        self.getMotorIterator = 0
         self.filelog = logging.FileHandler(path.join(Motherboard.workingDir, './log/motherboard.log'))
         self.filelog.setLevel(logging.INFO)
         self.filelog.setFormatter(logFormat)
@@ -34,17 +34,13 @@ class Motherboard(object):
         self.modbus = modbus.ModbusBackend()
         self.stage = stage.Stage(self.modbus, testMode=False, plot=False, workingDir=Motherboard.workingDir)
         self.osc = osc.MotherboardServer(self.stage, 7969)
-        self.config = utils.Conf((self.stage, self.osc, self.modbus,), Motherboard.workingDir)
+        #self.config = utils.Conf((self.stage, self.osc, self.modbus,), Motherboard.workingDir)
 
-        self.config.log = logging.getLogger('motherboard.conf')
+       # self.config.log = logging.getLogger('motherboard.conf')
         self.stage.log = logging.getLogger('motherboard.stage')
         self.osc.log = logging.getLogger('motherboard.osc')
         self.modbus.log = logging.getLogger('motherboard.modbus')
 
-        # Share one config file
-        self.stage.config = self.config
-        self.modbus.config = self.config
-        self.osc.config = self.config
 
         #self.osc.theEye = self.stage.TheEye.oscTarget
         self.stage.oscTarget = self.osc
@@ -73,49 +69,45 @@ class Motherboard(object):
 
     def run(self):
         while True:
-            #changer != en is not
             if(self.stage.sender != None):
-                #self.log.debug("Envoie des positions")
-                rtn = self.stage.getPositions()
-                idMoteur = 0
-                try:
-                    for i in rtn:
-                        returnMsg = Message('/config/stage/getMotor' + str(idMoteur))
-                        returnMsg.add(i)
-                        idMoteur = int(idMoteur) + 1
-                        self.osc.send(self.stage.sender,returnMsg)
-                except Exception:
-                    self.log.info(rtn)
+                if(self.getMotorIterator == 3):
+                    self.getMotorIterator = 0
+                    #self.log.debug("Envoie des positions")
+                    rtn = self.stage.getPositions()
+                    idMoteur = 0
+                    try:
+                        for i in rtn:
+                            returnMsg = Message('/config/stage/getMotor' + str(idMoteur))
+                            returnMsg.add(i)
+                            idMoteur = int(idMoteur) + 1
+                            self.osc.send(self.stage.sender,returnMsg)
+                    except Exception:
+                        self.log.info("Movidrive : Demande de position trop rapide")
+                else:
+                    self.getMotorIterator = self.getMotorIterator + 1
             positions = self.stage.getPositions()
             i = 0
             try:
                 for movidrive in self.stage.movidrive:
                     if(movidrive.getLockPosition() != None):
-                        difference = movidrive.getLockPosition() - positions[i]
-                        if(difference < self.stage.margeError and difference > self.stage.margeError * -1):
-                            movidrive.positionAtteinte = True
-                            self.log.info("Destination atteinte")
-                            msg = Message('/config/stage/destinationAtteinte')
-                            msg.add(1)
-                            self.osc.send(self.stage.sender,msg)
-            except Exception:
-                self.log.info("Exception recherche destination")
+                        if (positions != False):
+                            difference = movidrive.getLockPosition() - positions[i]
+                            if(difference < self.stage.margeError and difference > self.stage.margeError * -1 and movidrive.positionAtteinte == False):
+                                movidrive.positionAtteinte = True
+                                self.log.info("Destination atteinte")
+                                msg = Message('/config/stage/destinationAtteinte' + str(i))
+                                msg.add(1)
+                                self.osc.send(self.stage.sender,msg)
+                        i = i + 1
+            except Exception as e:
+                self.log.info("Exception recherche destination" + e.message)
             sleep(self.interval)
-
-    def loadLastConfig(self):
-        if self.config.hasLastConfig:
-            self.log.info('Loading last config.')
-            self.config.loadLastConfig()
-            return True
-        else:
-            self.log.info('No last config found.')
-            return False
 
 if __name__ == "__main__":
     # Init motherboard
     mb = Motherboard()
-    mb.config.loadLastConfig()
-    mb.config.load()
+    #mb.config.loadLastConfig()
+    #mb.config.load()
     # Start motherboard
     mb.start()
 

@@ -24,30 +24,6 @@ class MotherboardServer(osc.OscServer):
         #self.theEye = self.toClass.TheEye.auth()
 
 
-    def iAmAt(self, x, y, z):
-        if self.gui:
-            iAmAtMsg = Message('/iAmAt')
-            iAmAtMsg.add(x, y, z)
-            self.send(self.gui, iAmAtMsg)
-
-    def iAmMovingAt(self, Vx, Vy, Vz):
-        if self.gui:
-            iAmMovingAtMsg = Message('/iAmMovingAt')
-            iAmMovingAtMsg.add(Vx, Vy, Vz)
-            self.send(self.gui, iAmMovingAtMsg)
-
-    def iAmAwayFrom(self, *args):
-        if self.gui:
-            iAmAwayFromMsg = Message('/iAmAwayFrom')
-            iAmAwayFromMsg.add(*args)
-            self.send(self.gui, iAmAwayFromMsg)
-
-    def iAmGoingToAt(self, *args):
-        if self.gui:
-            iAmGoingToAtMsg = Message('/iAmGoingToAt')
-            iAmGoingToAtMsg.add(*args)
-            self.send(self.gui, iAmGoingToAtMsg)
-
     def iAmParked(self, state):
         if self.gui:
             iAmParkedMsg = Message('/iAmParked')
@@ -94,10 +70,6 @@ class MotherboardServer(osc.OscServer):
                 motor = args
                 self.toClass.hasChanged(motor)
                 #self.heartbeat(sender, rtn)
-            elif '/initialPosition' in path:
-                self.log.info("passe ici")
-                motor, position = args
-                self.toClass.initialPosition(motor,position)
 
     @make_method(None, None)
     def defaultCallback(self, path, args, types, sender):
