@@ -24,13 +24,6 @@ class MotherboardServer(osc.OscServer):
         #self.theEye = self.toClass.TheEye.auth()
 
 
-    def iAmParked(self, state):
-        if self.gui:
-            iAmParkedMsg = Message('/iAmParked')
-            iAmParkedMsg.add(state)
-            self.send(self.gui, iAmParkedMsg)
-
-
     @make_method('/config/stage/moveMotor', 'if')
     @make_method('/config/stage/lockPosition', 'if')
     @make_method('/config/stage/initialPosition', 'if')
