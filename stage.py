@@ -20,20 +20,13 @@ class Stage(object):
         self.plot = plot
         self.workingDir = workingDir
         self.sender = None
-        self.storePos = True
         self.margeError = 0.1
         self.motorOffset = 475 # mm
         self.valeurMinVariationVitesse = 0.2
         self.valeurMaxVariationVitesse = 0.8
-        self.timeout = datetime.timedelta(seconds=1)
-
         self.log = logging.getLogger('stage')
-        self.config = False
-        self.calibrated = False
         self.parked = False
-        self.motors = OrderedDict()
         self.lastI = 0
-
         self.modbusInstance = modbusInstance
         self.DFE33B = self.modbusInstance.dfe
 
@@ -42,10 +35,8 @@ class Stage(object):
         self.oscTarget = None
 
         self.movidrive = list()
-        self.motorSpeeds = list()
         for mv in self.modbusInstance.movidrive:
             self.movidrive.append(mv)
-            self.motorSpeeds.append(0)
 
     def resetAll(self):
         if not self.testMode:
@@ -89,9 +80,9 @@ class Stage(object):
                 self.movidrive[i].setSpeed(0)
                 self.log.debug("Vitesse 0 moteur + " + str(i))
                 return True
-            speed = self.modificationVitesse(speed,i)
             positions = self.getPositions()
             positionMoteur = positions[i]
+            speed = self.modificationVitesse(speed,i,positionMoteur)
             difference = self.movidrive[i].getLockPosition() - positionMoteur
             self.log.info("Difference : " + str(difference))
             if(difference < self.margeError * -1):
@@ -115,9 +106,7 @@ class Stage(object):
         self.log.info("Verouillage a la position : " + str(position) + " " + str(self.movidrive[motor].lastLockPosition))
         self.movidrive[motor].positionAtteinte = False
 
-    def modificationVitesse(self,speed,i):
-        positions = self.getPositions()
-        positionMoteur = positions[i]
+    def modificationVitesse(self,speed,i,positionMoteur):
         positionVerouillee = self.movidrive[i].getLockPosition()
         pourcentageDistance = positionMoteur / positionVerouillee
         if(pourcentageDistance < self.valeurMinVariationVitesse):
@@ -125,7 +114,6 @@ class Stage(object):
             if(pourcentage < 0.1):
                 pourcentage = 0.1
             rtnVitesse = speed * pourcentage
-            return rtnVitesse
         elif(pourcentageDistance > self.valeurMaxVariationVitesse):
             positionValeurMax = pourcentageDistance - self.valeurMaxVariationVitesse
             valeurMax = 1 - self.valeurMaxVariationVitesse
@@ -133,7 +121,7 @@ class Stage(object):
             if(pourcentage > 0.9):
                 pourcentage = 0.9
             rtnVitesse = speed - (speed * pourcentage)
-            return rtnVitesse
+        return rtnVitesse
 
     @property
     def ready(self):

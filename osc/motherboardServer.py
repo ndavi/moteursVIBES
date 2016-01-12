@@ -54,18 +54,12 @@ class MotherboardServer(osc.OscServer):
                 #self.heartbeat(sender, rtn)
             elif '/resetAll' in path:
                 rtn = self.toClass.resetAll()
-                #self.heartbeat(sender, rtn)
             elif '/moveMotor' in path:
                     motor, speed = args
                     rtn = self.toClass.moveMotor(motor, speed)
-                    self.heartbeat(sender, rtn)
-                    if rtn != False and rtn != True and rtn != None:
-                        self.send(self.toClass.sender,rtn)
-                        self.log.info("Envoie du message")
             elif '/lockPosition' in path:
                 motor, position = args
                 self.toClass.lockPosition(motor,position)
-                #self.heartbeat(sender, rtn)
 
     @make_method(None, None)
     def defaultCallback(self, path, args, types, sender):

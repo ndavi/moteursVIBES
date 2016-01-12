@@ -430,7 +430,6 @@ class Movidrive(object):
         self.dfe33b = dfe33b
         self.unit_id = unit_id
         self.lockPosition = None
-        self.isLocked = False
         self.positionAtteinte = True
 
     def setLockPosition(self,lockPosition):
