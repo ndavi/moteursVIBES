@@ -24,13 +24,6 @@ class MotherboardServer(osc.OscServer):
         #self.theEye = self.toClass.TheEye.auth()
 
 
-    def iAmParked(self, state):
-        if self.gui:
-            iAmParkedMsg = Message('/iAmParked')
-            iAmParkedMsg.add(state)
-            self.send(self.gui, iAmParkedMsg)
-
-
     @make_method('/config/stage/moveMotor', 'if')
     @make_method('/config/stage/lockPosition', 'if')
     @make_method('/config/stage/initialPosition', 'if')
@@ -55,8 +48,8 @@ class MotherboardServer(osc.OscServer):
             elif '/resetAll' in path:
                 rtn = self.toClass.resetAll()
             elif '/moveMotor' in path:
-                    motor, speed = args
-                    rtn = self.toClass.moveMotor(motor, speed)
+                motor, speed = args
+                rtn = self.toClass.moveMotor(motor, speed)
             elif '/lockPosition' in path:
                 motor, position = args
                 self.toClass.lockPosition(motor,position)

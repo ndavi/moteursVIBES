@@ -29,11 +29,7 @@ class Stage(object):
         self.lastI = 0
         self.modbusInstance = modbusInstance
         self.DFE33B = self.modbusInstance.dfe
-
         self.reductionRatio = self.DFE33B.reductionRatio
-
-        self.oscTarget = None
-
         self.movidrive = list()
         for mv in self.modbusInstance.movidrive:
             self.movidrive.append(mv)
@@ -51,25 +47,18 @@ class Stage(object):
         return True
 
     def parkAll(self):
-        self.absSpeedGui = (0, 0, 0,)
-        self.absSpeedCommand = (0, 0, 0,)
         if not self.testMode:
                 self.DFE33B.setStatus(lockAll=True)
         self.parked = True
-
-        if self.oscTarget:
-            self.oscTarget.iAmParked(int(self.parked))
+        self.log.info("Parkage des moteurs")
 
         return True
 
     def unparkAll(self):
-        self.log.info("passe dans la fonction unpark")
         if not self.testMode:
             self.DFE33B.setStatus(lockAll=False)
         self.parked = False
-        if self.oscTarget:
-            self.oscTarget.iAmParked(int(self.parked))
-
+        self.log.info("Unparkage des moteurs")
         return True
 
     def moveMotor(self, i, speed):
@@ -86,24 +75,23 @@ class Stage(object):
             difference = self.movidrive[i].getLockPosition() - positionMoteur
             self.log.info("Difference : " + str(difference))
             if(difference < self.margeError * -1):
-                self.log.info("Le moteur avance : " + str(difference))
+                self.log.debug("Le moteur avance : " + str(difference))
                 speed = float(speed) * -1
             if(difference > self.margeError):
-                self.log.info("Le moteur recule : " + str(difference))
+                self.log.debug("Le moteur recule : " + str(difference))
             else:
-                self.log.info("Dans la marge d'erreur : " + str(positionMoteur) + " " + str(self.movidrive[i].getLockPosition()))
+                self.log.debug("Dans la marge d'erreur : " + str(positionMoteur) + " " + str(self.movidrive[i].getLockPosition()))
             if i >= 0 and i < len(self.movidrive):
-                self.log.info("Passe dans la fonction movemotor : " + str(speed) + "moteur" + str(i))
+                self.log.info("Mouvement : " + str(speed) + "moteur" + str(i))
                 self.movidrive[i].setSpeed(int(speed))
                 self.lastI = i
                 return True
-        except Exception:
-            self.log.info("Exception dans movemotor")
+        except Exception as e:
+            self.log.debug("Exception dans movemotor : " + e.message)
         return False
     def lockPosition(self, motor, position):
-        self.movidrive[motor].lastLockPosition = self.movidrive[motor].getLockPosition()
         self.movidrive[motor].setLockPosition(float(position))
-        self.log.info("Verouillage a la position : " + str(position) + " " + str(self.movidrive[motor].lastLockPosition))
+        self.log.info("Verouillage a la position : " + str(position))
         self.movidrive[motor].positionAtteinte = False
 
     def modificationVitesse(self,speed,i,positionMoteur):
@@ -127,22 +115,7 @@ class Stage(object):
     def ready(self):
         return True
 
-
     def getPositions(self):
         positions = self.DFE33B.getPositions()
         return positions
-
-    def setSpeed(self):
-        for i, d in enumerate(self.deltaLenghts):
-            self.motorSpeeds[i] = self.getRpm(d)
-            self.log.debug('Movidrive n%i speed (rpm): %f' % (i, self.motorSpeeds[i]))
-        if self.testMode is False:
-            self.DFE33B.setSpeeds(*self.motorSpeeds)
-        return True
-
-    def getRpm(self, d):
-        cableSpeed = d / (self.interval / 60)
-        cableDrumSpeed = cableSpeed / self.cableDrumPerimeter
-        CMP50SSpeed = cableDrumSpeed
-        return round(CMP50SSpeed, 2)
 
