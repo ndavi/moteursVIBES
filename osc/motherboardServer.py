@@ -26,12 +26,14 @@ class MotherboardServer(osc.OscServer):
 
     @make_method('/config/stage/moveMotor', 'if')
     @make_method('/config/stage/lockPosition', 'if')
-    @make_method('/config/stage/initialPosition', 'if')
-    @make_method('/config/stage/hasChanged', 'f')
-    @make_method('/config/stage/stopAll', None)
+    @make_method('/config/stage/setMinAcceleration', 'if')
+    @make_method('/config/stage/setMaxAcceleration', 'if')
+    @make_method('/config/stage/setMinMargeVitesse', 'if')
+    @make_method('/config/stage/setMaxMargeVitesse', 'if')
     @make_method('/config/stage/parkAll', None)
     @make_method('/config/stage/unparkAll', None)
     #@make_method('/config/stage/resetAll', None)
+    #@make_method('/config/stage/stopAll', None)
     def configStageCallback(self, path, args, types, sender):
         if '/stage' in path:
             if '/unparkAll' in path:
@@ -42,17 +44,29 @@ class MotherboardServer(osc.OscServer):
                 self.toClass.sender = sender
                 rtn = self.toClass.parkAll()
                 #self.heartbeat(sender, rtn)
-            elif '/stopAll' in path:
-                rtn = self.toClass.stopAll()
+            #elif '/stopAll' in path:
+                #rtn = self.toClass.stopAll()
                 #self.heartbeat(sender, rtn)
-            elif '/resetAll' in path:
-                rtn = self.toClass.resetAll()
+            #elif '/resetAll' in path:
+                #rtn = self.toClass.resetAll()
             elif '/moveMotor' in path:
                 motor, speed = args
                 self.toClass.moveMotor(motor, speed)
             elif '/lockPosition' in path:
                 motor, position = args
                 self.toClass.lockPosition(motor,position)
+            elif '/setMinAcceleration' in path:
+                motor, pourcentage = args
+                self.toClass.setMinAcceleration(motor,pourcentage)
+            elif '/setMaxAcceleration' in path:
+                motor, pourcentage = args
+                self.toClass.setMaxAcceleration(motor,pourcentage)
+            elif '/setMinMargeVitesse' in path:
+                motor, pourcentage = args
+                self.toClass.setMinMargeVitesse(motor,pourcentage)
+            elif '/setMaxMargeVitesse' in path:
+                motor, pourcentage = args
+                self.toClass.setMaxMargeVitesse(motor,pourcentage)
 
     @make_method(None, None)
     def defaultCallback(self, path, args, types, sender):

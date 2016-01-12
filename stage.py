@@ -15,21 +15,16 @@ logging.basicConfig()
 
 
 class Stage(object):
-    def __init__(self, modbusInstance, testMode=False, plot=False, workingDir=None):
-        self.testMode = testMode
-        self.plot = plot
+    def __init__(self, modbusInstance, workingDir=None):
         self.workingDir = workingDir
         self.sender = None
         self.margeError = 0.1
         self.motorOffset = 475 # mm
-        self.valeurMinVariationVitesse = 0.2
-        self.valeurMaxVariationVitesse = 0.8
         self.log = logging.getLogger('stage')
         self.parked = False
         self.lastI = 0
         self.modbusInstance = modbusInstance
         self.DFE33B = self.modbusInstance.dfe
-        self.reductionRatio = self.DFE33B.reductionRatio
         self.movidrive = list()
         for mv in self.modbusInstance.movidrive:
             self.movidrive.append(mv)
@@ -89,27 +84,36 @@ class Stage(object):
         except Exception as e:
             self.log.debug("Exception dans movemotor : " + e.message)
         return False
+    def modificationVitesse(self,speed,i,positionMoteur):
+        positionVerouillee = self.movidrive[i].getLockPosition()
+        pourcentageDistance = positionMoteur / positionVerouillee
+        if(pourcentageDistance < self.movidrive[i].valeurMinVariationVitesse):
+            pourcentage = pourcentageDistance / self.movidrive[i].valeurMinVariationVitesse
+            if(pourcentage < self.movidrive[i].valeurMinMargeVitesse):
+                pourcentage = self.movidrive[i].valeurMinMargeVitesse
+            rtnVitesse = speed * pourcentage
+        elif(pourcentageDistance > self.movidrive[i].valeurMaxVariationVitesse):
+            positionValeurMax = pourcentageDistance - self.movidrive[i].valeurMaxVariationVitesse
+            valeurMax = 1 - self.movidrive[i].valeurMaxVariationVitesse
+            pourcentage = positionValeurMax / valeurMax
+            if(pourcentage > self.movidrive[i].valeurMaxMargeVitesse):
+                pourcentage = self.movidrive[i].valeurMaxMargeVitesse
+            rtnVitesse = speed - (speed * pourcentage)
+        return rtnVitesse
     def lockPosition(self, motor, position):
         self.movidrive[motor].setLockPosition(float(position))
         self.log.info("Verouillage a la position : " + str(position))
         self.movidrive[motor].positionAtteinte = False
 
-    def modificationVitesse(self,speed,i,positionMoteur):
-        positionVerouillee = self.movidrive[i].getLockPosition()
-        pourcentageDistance = positionMoteur / positionVerouillee
-        if(pourcentageDistance < self.valeurMinVariationVitesse):
-            pourcentage = pourcentageDistance / self.valeurMinVariationVitesse
-            if(pourcentage < 0.1):
-                pourcentage = 0.1
-            rtnVitesse = speed * pourcentage
-        elif(pourcentageDistance > self.valeurMaxVariationVitesse):
-            positionValeurMax = pourcentageDistance - self.valeurMaxVariationVitesse
-            valeurMax = 1 - self.valeurMaxVariationVitesse
-            pourcentage = positionValeurMax / valeurMax
-            if(pourcentage > 0.9):
-                pourcentage = 0.9
-            rtnVitesse = speed - (speed * pourcentage)
-        return rtnVitesse
+    def setMinAcceleration(self,motor,pourcentage):
+        self.movidrive[motor].valeurMinVariationVitesse = pourcentage
+    def setMaxAcceleration(self,motor,pourcentage):
+        self.movidrive[motor].valeurMaxVariationVitesse = pourcentage
+
+    def setMinMargeVitesse(self,motor,pourcentage):
+        self.movidrive[motor].valeurMinMargeVitesse = pourcentage
+    def setMaxMargeVitesse(self,motor,pourcentage):
+        self.movidrive[motor].valeurMaxMargeVitesse = pourcentage
 
     @property
     def ready(self):

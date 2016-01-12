@@ -32,7 +32,7 @@ class Motherboard(object):
         self.log.addHandler(self.debuglog)
 
         self.modbus = modbus.ModbusBackend()
-        self.stage = stage.Stage(self.modbus, testMode=False, plot=False, workingDir=Motherboard.workingDir)
+        self.stage = stage.Stage(self.modbus, workingDir=Motherboard.workingDir)
         self.osc = osc.MotherboardServer(self.stage, 7969)
         #self.config = utils.Conf((self.stage, self.osc, self.modbus,), Motherboard.workingDir)
 
