@@ -19,13 +19,12 @@ class Stage(object):
         self.testMode = testMode
         self.plot = plot
         self.workingDir = workingDir
-        self.lastCoordsPath = path.join(self.workingDir,
-                '.last.coords')
         self.sender = None
         self.storePos = True
         self.margeError = 0.1
         self.motorOffset = 475 # mm
-
+        self.valeurMinVariationVitesse = 0.2
+        self.valeurMaxVariationVitesse = 0.8
         self.timeout = datetime.timedelta(seconds=1)
 
         self.log = logging.getLogger('stage')
@@ -84,10 +83,13 @@ class Stage(object):
 
     def moveMotor(self, i, speed):
         try:
-            if speed == int(0) or self.movidrive[i].positionAtteinte == True:
+            if self.parked:
+                return False
+            if speed == 0 or self.movidrive[i].positionAtteinte == True:
                 self.movidrive[i].setSpeed(0)
                 self.log.debug("Vitesse 0 moteur + " + str(i))
-                return False
+                return True
+            speed = self.modificationVitesse(speed,i)
             positions = self.getPositions()
             positionMoteur = positions[i]
             difference = self.movidrive[i].getLockPosition() - positionMoteur
@@ -99,8 +101,6 @@ class Stage(object):
                 self.log.info("Le moteur recule : " + str(difference))
             else:
                 self.log.info("Dans la marge d'erreur : " + str(positionMoteur) + " " + str(self.movidrive[i].getLockPosition()))
-            if self.parked:
-                return False
             if i >= 0 and i < len(self.movidrive):
                 self.log.info("Passe dans la fonction movemotor : " + str(speed) + "moteur" + str(i))
                 self.movidrive[i].setSpeed(int(speed))
@@ -114,22 +114,26 @@ class Stage(object):
         self.movidrive[motor].setLockPosition(float(position))
         self.log.info("Verouillage a la position : " + str(position) + " " + str(self.movidrive[motor].lastLockPosition))
         self.movidrive[motor].positionAtteinte = False
-    def hasChanged(self,motor):
-        self.movidrive[motor].isLocked(False)
 
-    def reductionVitesse(self,speed,i):
+    def modificationVitesse(self,speed,i):
         positions = self.getPositions()
         positionMoteur = positions[i]
         positionVerouillee = self.movidrive[i].getLockPosition()
         pourcentageDistance = positionMoteur / positionVerouillee
-        distance = self.movidrive[i].getLockPosition() - positionMoteur
-        pourcentageDebut = 0;
-        if(pourcentageDistance < 0.20):
-            if(pourcentageDebut == 0):
-                pourcentageDebut = pourcentageDistance
-            pass
-        elif(pourcentageDistance > 0.80):
-            pass
+        if(pourcentageDistance < self.valeurMinVariationVitesse):
+            pourcentage = pourcentageDistance / self.valeurMinVariationVitesse
+            if(pourcentage < 0.1):
+                pourcentage = 0.1
+            rtnVitesse = speed * pourcentage
+            return rtnVitesse
+        elif(pourcentageDistance > self.valeurMaxVariationVitesse):
+            positionValeurMax = pourcentageDistance - self.valeurMaxVariationVitesse
+            valeurMax = 1 - self.valeurMaxVariationVitesse
+            pourcentage = positionValeurMax / valeurMax
+            if(pourcentage > 0.9):
+                pourcentage = 0.9
+            rtnVitesse = speed - (speed * pourcentage)
+            return rtnVitesse
 
     @property
     def ready(self):

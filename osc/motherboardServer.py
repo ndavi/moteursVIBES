@@ -66,31 +66,8 @@ class MotherboardServer(osc.OscServer):
                 motor, position = args
                 self.toClass.lockPosition(motor,position)
                 #self.heartbeat(sender, rtn)
-            elif '/hasChanged' in path:
-                motor = args
-                self.toClass.hasChanged(motor)
-                #self.heartbeat(sender, rtn)
 
     @make_method(None, None)
     def defaultCallback(self, path, args, types, sender):
         self.log.warn('Unknown command: %s %s' % (path, ','.join([str(i) for i in args])))
         #self.heartbeat(sender, False)
-
-
-if __name__ == '__main__':
-    from . import stage
-    s = stage.Stage()
-    if not s.config.loadLastConfig():
-        s.config.load('./conf.sample')
-    s.debug = True
-    try:
-        osc = OscServer(s, 7969)
-        osc.feedback = True
-    except ServerError, err:
-        print str(err)
-        sys.exit()
-
-    osc.start()
-    print s.getConfig()
-    raw_input('press enter to quit...\n')
-    osc.stop()

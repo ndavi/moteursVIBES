@@ -44,22 +44,3 @@ class OscServer(ServerThread):
         if not src:
             src = 'mother'
         #self.send(destination, '/heartbeat' + state + '/' + src)
-
-
-if __name__ == '__main__':
-    from . import stage
-    s = stage.Stage()
-    if not s.config.loadLastConfig():
-        s.config.load('./conf.sample')
-    s.debug = True
-    try:
-        osc = OscServer(s, 7969)
-        osc.feedback = True
-    except ServerError, err:
-        print str(err)
-        sys.exit()
-
-    osc.start()
-    print s.getConfig()
-    raw_input('press enter to quit...\n')
-    osc.stop()
