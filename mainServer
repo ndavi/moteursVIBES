@@ -12,7 +12,7 @@ from time import sleep
 from liblo import Message
 
 class Motherboard(object):
-    workingDir = '/home/motherboard/motherboard/'
+    workingDir = path.dirname(path.realpath(__file__))
 
     def __init__(self):
         self.interval = 0.2 #second

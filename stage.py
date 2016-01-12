@@ -82,7 +82,7 @@ class Stage(object):
             else:
                 self.log.debug("Dans la marge d'erreur : " + str(positionMoteur) + " " + str(self.movidrive[i].getLockPosition()))
             if i >= 0 and i < len(self.movidrive):
-                self.log.info("Mouvement : " + str(speed) + "moteur" + str(i))
+                self.log.info("Mouvement : " + str(speed) + "moteur : " + str(i))
                 self.movidrive[i].setSpeed(int(speed))
                 self.lastI = i
                 return True

@@ -49,7 +49,7 @@ class MotherboardServer(osc.OscServer):
                 rtn = self.toClass.resetAll()
             elif '/moveMotor' in path:
                 motor, speed = args
-                rtn = self.toClass.moveMotor(motor, speed)
+                self.toClass.moveMotor(motor, speed)
             elif '/lockPosition' in path:
                 motor, position = args
                 self.toClass.lockPosition(motor,position)
