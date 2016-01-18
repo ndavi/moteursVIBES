@@ -435,6 +435,7 @@ class Movidrive(object):
         self.valeurMaxVariationVitesse = 0.8
         self.valeurMinMargeVitesse = 0.1
         self.valeurMaxMargeVitesse = 0.9
+        self.distanceToLockPosition = 0
 
     def setLockPosition(self,lockPosition):
         self.lockPosition = lockPosition

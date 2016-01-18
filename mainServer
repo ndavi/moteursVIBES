@@ -15,7 +15,7 @@ class Motherboard(object):
     workingDir = path.dirname(path.realpath(__file__))
 
     def __init__(self):
-        self.interval = 0.2 #second
+        self.interval = 0.1 #second
         logFormat = logging.Formatter('%(asctime)s %(name)s - %(levelname)s: %(message)s')
         self.log = logging.getLogger('motherboard')
         self.log.setLevel(logging.INFO)
@@ -70,37 +70,33 @@ class Motherboard(object):
     def run(self):
         while True:
             if(self.stage.sender != None):
-                if(self.getMotorIterator == 3):
-                    self.getMotorIterator = 0
-                    #self.log.debug("Envoie des positions")
-                    rtn = self.stage.getPositions()
-                    idMoteur = 0
-                    try:
-                        for i in rtn:
-                            returnMsg = Message('/config/stage/getMotor' + str(idMoteur))
-                            returnMsg.add(i)
-                            idMoteur = int(idMoteur) + 1
-                            self.osc.send(self.stage.sender,returnMsg)
-                    except Exception:
+                #self.log.debug("Envoie des positions")
+                positions = self.stage.getPositions()
+                idMoteur = 0
+                try:
+                    for i in positions:
+                        returnMsg = Message('/config/stage/getMotor' + str(idMoteur))
+                        returnMsg.add(i)
+                        idMoteur = int(idMoteur) + 1
+                        self.osc.send(self.stage.sender,returnMsg)
+                except Exception:
                         self.log.info("Movidrive : Demande de position trop rapide")
-                else:
-                    self.getMotorIterator = self.getMotorIterator + 1
-            positions = self.stage.getPositions()
-            i = 0
-            try:
-                for movidrive in self.stage.movidrive:
-                    if(movidrive.getLockPosition() != None):
-                        if (positions != False):
-                            difference = movidrive.getLockPosition() - positions[i]
-                            if(difference < self.stage.margeError and difference > self.stage.margeError * -1 and movidrive.positionAtteinte == False):
-                                movidrive.positionAtteinte = True
-                                self.log.info("Destination atteinte")
-                                msg = Message('/config/stage/destinationAtteinte' + str(i))
-                                msg.add(1)
-                                self.osc.send(self.stage.sender,msg)
-                        i = i + 1
-            except Exception as e:
-                self.log.info("Exception recherche destination" + e.message)
+                i = 0
+                try:
+                    for movidrive in self.stage.movidrive:
+                        if(movidrive.getLockPosition() != None):
+                            if (positions != False):
+                                difference = movidrive.getLockPosition() - positions[i]
+                                if(difference < self.stage.margeError and difference > self.stage.margeError * -1 and movidrive.positionAtteinte == False):
+                                    movidrive.positionAtteinte = True
+                                    self.log.info("Destination atteinte")
+                                    msg = Message('/config/stage/destinationAtteinte' + str(i))
+                                    msg.add(1)
+                                    self.osc.send(self.stage.sender,msg)
+                            i = i + 1
+                except Exception as e:
+                    self.log.info("Exception recherche destination" + e.message)
+            self.log.info("Load average : " + str(open("/proc/loadavg").readline().split(" ")[:3]))
             sleep(self.interval)
 
 if __name__ == "__main__":

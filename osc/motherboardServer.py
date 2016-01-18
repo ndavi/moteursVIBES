@@ -30,9 +30,10 @@ class MotherboardServer(osc.OscServer):
     @make_method('/config/stage/setMaxAcceleration', 'if')
     @make_method('/config/stage/setMinMargeVitesse', 'if')
     @make_method('/config/stage/setMaxMargeVitesse', 'if')
+    @make_method('/config/stage/setReductionVitesse', 'i')
     @make_method('/config/stage/parkAll', None)
     @make_method('/config/stage/unparkAll', None)
-    #@make_method('/config/stage/resetAll', None)
+    @make_method('/config/stage/resetAll', None)
     #@make_method('/config/stage/stopAll', None)
     def configStageCallback(self, path, args, types, sender):
         if '/stage' in path:
@@ -47,11 +48,18 @@ class MotherboardServer(osc.OscServer):
             #elif '/stopAll' in path:
                 #rtn = self.toClass.stopAll()
                 #self.heartbeat(sender, rtn)
-            #elif '/resetAll' in path:
-                #rtn = self.toClass.resetAll()
+            elif '/resetAll' in path:
+                self.toClass.resetAll()
             elif '/moveMotor' in path:
                 motor, speed = args
-                self.toClass.moveMotor(motor, speed)
+                rtn = self.toClass.moveMotor(motor, speed)
+                if(rtn != None and rtn != False and rtn != True and self.toClass.sender != None):
+                    msgDistanceDeBase = Message("/config/stage/distanceDeBase" + str(motor))
+                    msgDistanceDeBase.add(rtn[0])
+                    #msgDistanceCalcul = Message("/config/stage/pourcentageCalcul" + str(motor))
+                    #msgDistanceCalcul.add(rtn[1])
+                    self.send(self.toClass.sender,msgDistanceDeBase)
+                    #self.send(self.toClass.sender,msgDistanceCalcul)
             elif '/lockPosition' in path:
                 motor, position = args
                 self.toClass.lockPosition(motor,position)
@@ -67,6 +75,15 @@ class MotherboardServer(osc.OscServer):
             elif '/setMaxMargeVitesse' in path:
                 motor, pourcentage = args
                 self.toClass.setMaxMargeVitesse(motor,pourcentage)
+            elif '/setReductionVitesse' in path:
+                isSet, = args
+                self.log.info("Passe dans reduc vitesse" + str(isSet))
+                if(isSet == 1):
+                    self.toClass.reductionVitesse = True
+                    self.log.info("Reduction de vitesse activee")
+                elif(isSet == 0):
+                    self.toClass.reductionVitesse = False
+                    self.log.info("Reduction de vitesse desactivee")
 
     @make_method(None, None)
     def defaultCallback(self, path, args, types, sender):
