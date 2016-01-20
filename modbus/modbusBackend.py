@@ -183,7 +183,7 @@ class DFE33B(object):
         statusRegister = statusRegisters[offset]
         positionRegister = statusRegisters[offset+1] + statusRegisters[offset+2]
         self.dpValuesOutput = result[1]
-
+        print(str(result[1]))
         powerStage, ready, \
                 outputProcessFree, rampSet, \
                 parameterSet, fault, \
@@ -211,6 +211,7 @@ class DFE33B(object):
             positions = list()
             for i in range(self.nbMovidrives):
                 offset = i * self.nbDataProcess
+                #print(bitstring.Bits(bin='0b' + self.dpValuesOutput[6]).str)
                 positions.append(
                         bitstring.Bits(bin='0b' + \
                                 self.dpValuesOutput[offset+1] + \
@@ -407,7 +408,8 @@ class DFE33B(object):
                 for l in range(128):
                     request = self.rq.readHoldingRegisters(unit_id, i, (l+1)*8)
                     result = self.testFunctionCode(request, l+1)
-                    print i, result
+                    print i, result, (l+1)*8
+
         else:
             if not value:
                 value = True*8
@@ -430,6 +432,7 @@ class Movidrive(object):
         self.dfe33b = dfe33b
         self.unit_id = unit_id
         self.lockPosition = None
+        self.position = None
         self.positionAtteinte = True
         self.valeurMinVariationVitesse = 0.2
         self.valeurMaxVariationVitesse = 0.8
@@ -485,5 +488,9 @@ if __name__ == "__main__":
     mv1 = Movidrive(dfe, 0)
     mv2 = Movidrive(dfe, 1)
     mv3 = Movidrive(dfe, 2)
-    # dfe.deviceInformation()
-    # dfe.getBusTimeout()
+    #dfe.deviceInformation()
+    #print(dfe.getPositions("positions"))
+    #print(mv2.getStatus())
+    print(dfe.scanAddress(4,4,"r",dfe.nbMovidrives * dfe.nbDataProcess))
+    #print(dfe.scanUnit(100,dfe.nbMovidrives * dfe.nbDataProcess))
+    #print(mv3.getStatus())

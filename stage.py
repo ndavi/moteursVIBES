@@ -45,26 +45,26 @@ class Stage(object):
 
     def moveMotor(self, i, speed):
         try:
-            if self.parked or  self.movidrive[i].getLockPosition() == None:
+            positionMoteur = self.movidrive[i].position
+            if self.parked or self.movidrive[i].getLockPosition() == None or positionMoteur == None:
+                self.movidrive[i].setSpeed(0)
                 return False
-            positions = self.getPositions()
-            positionMoteur = positions[i]
-            difference = self.movidrive[i].getLockPosition() - positionMoteur
-            distanceDeBase = self.movidrive[i].distanceToLockPosition
-            distanceCalcul = difference
-            if(distanceDeBase < 0):
-                distanceDeBase = distanceDeBase * -1
-            if(distanceCalcul < 0):
-                 distanceCalcul = distanceCalcul * -1
-            pourcentageCalcul = distanceCalcul / distanceDeBase
-            #self.log.info(str(pourcentageCalcul) + "   " + str(distanceNow) + "   " + str(distanceDeBase))
-            if(pourcentageCalcul > 1):
-                pourcentageCalcul = 1
-            pourcentageDistance = 1 - pourcentageCalcul
             if speed == 0 or self.movidrive[i].positionAtteinte == True:
                 self.movidrive[i].setSpeed(0)
-                self.log.debug("Vitesse 0 moteur + " + str(i))
+                distanceDeBase = self.movidrive[i].distanceToLockPosition
             else:
+                difference = self.movidrive[i].getLockPosition() - positionMoteur
+                distanceDeBase = self.movidrive[i].distanceToLockPosition
+                distanceCalcul = difference
+                if(distanceDeBase < 0):
+                    distanceDeBase = distanceDeBase * -1
+                if(distanceCalcul < 0):
+                    distanceCalcul = distanceCalcul * -1
+                pourcentageCalcul = distanceCalcul / distanceDeBase
+                #self.log.info(str(pourcentageCalcul) + "   " + str(distanceNow) + "   " + str(distanceDeBase))
+                if(pourcentageCalcul > 1):
+                    pourcentageCalcul = 1
+                pourcentageDistance = 1 - pourcentageCalcul
                 if(self.reductionVitesse):
                     speed = self.modificationVitesse(speed,i,pourcentageDistance)
                 self.log.debug("Difference : " + str(difference))
@@ -82,7 +82,7 @@ class Stage(object):
         except Exception as e:
             self.log.info("Exception dans movemotor : " + e.message)
             return False
-        return [distanceDeBase,pourcentageDistance]
+        return distanceDeBase
     def modificationVitesse(self,speed,i,pourcentageDistance):
         #self.log.info("Apres : " + str(pourcentageDistance) + "val min : " + str(self.movidrive[i].valeurMinVariationVitesse))
         if(pourcentageDistance < self.movidrive[i].valeurMinVariationVitesse):

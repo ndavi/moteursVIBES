@@ -15,7 +15,7 @@ class Motherboard(object):
     workingDir = path.dirname(path.realpath(__file__))
 
     def __init__(self):
-        self.interval = 0.1 #second
+        self.interval = 0.01 #second
         logFormat = logging.Formatter('%(asctime)s %(name)s - %(levelname)s: %(message)s')
         self.log = logging.getLogger('motherboard')
         self.log.setLevel(logging.INFO)
@@ -72,18 +72,13 @@ class Motherboard(object):
             if(self.stage.sender != None):
                 #self.log.debug("Envoie des positions")
                 positions = self.stage.getPositions()
-                idMoteur = 0
-                try:
-                    for i in positions:
-                        returnMsg = Message('/config/stage/getMotor' + str(idMoteur))
-                        returnMsg.add(i)
-                        idMoteur = int(idMoteur) + 1
-                        self.osc.send(self.stage.sender,returnMsg)
-                except Exception:
-                        self.log.info("Movidrive : Demande de position trop rapide")
                 i = 0
                 try:
                     for movidrive in self.stage.movidrive:
+                        returnMsg = Message('/config/stage/getMotor' + str(i))
+                        returnMsg.add(positions[i])
+                        movidrive.position = positions[i]
+                        self.osc.send(self.stage.sender,returnMsg)
                         if(movidrive.getLockPosition() != None):
                             if (positions != False):
                                 difference = movidrive.getLockPosition() - positions[i]
@@ -93,9 +88,9 @@ class Motherboard(object):
                                     msg = Message('/config/stage/destinationAtteinte' + str(i))
                                     msg.add(1)
                                     self.osc.send(self.stage.sender,msg)
-                            i = i + 1
+                        i = i + 1
                 except Exception as e:
-                    self.log.info("Exception recherche destination" + e.message)
+                    self.log.info("Demande de position trop rapide")
             self.log.info("Load average : " + str(open("/proc/loadavg").readline().split(" ")[:3]))
             sleep(self.interval)
 

@@ -55,11 +55,8 @@ class MotherboardServer(osc.OscServer):
                 rtn = self.toClass.moveMotor(motor, speed)
                 if(rtn != None and rtn != False and rtn != True and self.toClass.sender != None):
                     msgDistanceDeBase = Message("/config/stage/distanceDeBase" + str(motor))
-                    msgDistanceDeBase.add(rtn[0])
-                    #msgDistanceCalcul = Message("/config/stage/pourcentageCalcul" + str(motor))
-                    #msgDistanceCalcul.add(rtn[1])
+                    msgDistanceDeBase.add(rtn)
                     self.send(self.toClass.sender,msgDistanceDeBase)
-                    #self.send(self.toClass.sender,msgDistanceCalcul)
             elif '/lockPosition' in path:
                 motor, position = args
                 self.toClass.lockPosition(motor,position)
