@@ -183,7 +183,7 @@ class DFE33B(object):
         statusRegister = statusRegisters[offset]
         positionRegister = statusRegisters[offset+1] + statusRegisters[offset+2]
         self.dpValuesOutput = result[1]
-        print(str(result[1]))
+        #print(str(result[1]))
         powerStage, ready, \
                 outputProcessFree, rampSet, \
                 parameterSet, fault, \
