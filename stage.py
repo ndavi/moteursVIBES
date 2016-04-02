@@ -28,6 +28,7 @@ class Stage(object):
         self.DFE33B = self.modbusInstance.dfe
         self.movidrive = list()
         self.distanceDeBase = 0
+        self.vitesseMoteurs = [0,0,0];
         for mv in self.modbusInstance.movidrive:
             self.movidrive.append(mv)
 
@@ -76,7 +77,9 @@ class Stage(object):
                 else:
                     self.log.debug("Dans la marge d'erreur : " + str(positionMoteur) + " " + str(self.movidrive[i].getLockPosition()))
                 if i >= 0 and i < len(self.movidrive):
-                    self.log.debug("Mouvement : " + str(speed) + "moteur : " + str(i))
+                    self.vitesseMoteurs[i] = speed
+                    self.log.info("Reception de movemotor, Vitesse du  moteur 0 : " + str(self.vitesseMoteurs[0])
+                                  + " Vitesse du moteur 1 : " + str(self.vitesseMoteurs[1]) + " Vitesse du moteur 2 : " + str(self.vitesseMoteurs[2]) + "   Ce programme semble concatener")
                     self.movidrive[i].setSpeed(int(speed))
                     self.lastI = i
         except Exception as e:

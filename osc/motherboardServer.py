@@ -38,11 +38,13 @@ class MotherboardServer(osc.OscServer):
     def configStageCallback(self, path, args, types, sender):
         if '/stage' in path:
             if '/unparkAll' in path:
-                self.toClass.sender = sender
+		if self.toClass.sender == None:
+                    self.toClass.sender = sender
                 rtn = self.toClass.unparkAll()
                 #self.heartbeat(sender, rtn)
             elif '/parkAll' in path:
-                self.toClass.sender = sender
+		if self.toClass.sender == None:
+                    self.toClass.sender = sender
                 rtn = self.toClass.parkAll()
                 #self.heartbeat(sender, rtn)
             #elif '/stopAll' in path:

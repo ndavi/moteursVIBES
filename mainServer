@@ -15,7 +15,7 @@ class Motherboard(object):
     workingDir = path.dirname(path.realpath(__file__))
 
     def __init__(self):
-        self.interval = 0.01 #second
+        self.interval = 0.1 #second
         logFormat = logging.Formatter('%(asctime)s %(name)s - %(levelname)s: %(message)s')
         self.log = logging.getLogger('motherboard')
         self.log.setLevel(logging.INFO)
@@ -78,6 +78,7 @@ class Motherboard(object):
                         returnMsg = Message('/config/stage/getMotor' + str(i))
                         returnMsg.add(positions[i])
                         movidrive.position = positions[i]
+			#self.log.info("Envoie position " + str(movidrive.position))
                         self.osc.send(self.stage.sender,returnMsg)
                         if(movidrive.getLockPosition() != None):
                             if (positions != False):
@@ -90,8 +91,8 @@ class Motherboard(object):
                                     self.osc.send(self.stage.sender,msg)
                         i = i + 1
                 except Exception as e:
-                    self.log.info("Demande de position trop rapide")
-            self.log.info("Load average : " + str(open("/proc/loadavg").readline().split(" ")[:3]))
+                    self.log.debug("Demande de position trop rapide " + str(e))
+            #self.log.info("Load average : " + str(open("/proc/loadavg").readline().split(" ")[:3]))
             sleep(self.interval)
 
 if __name__ == "__main__":
