@@ -116,6 +116,9 @@ class Stage(object):
         self.DFE33B.setStatus(resetAll=False)
 
     def lockPosition(self, motor, position):
+        if float(self.limiteMoteurs["moteur" + str(motor)][0]) > float(position) or float(self.limiteMoteurs["moteur" + str(motor)][1]) < float(position) :
+            self.log.info("Depassement de la limite sur le moteur " + str(motor) + " position : " + str(position))
+            return False
         self.movidrive[motor].setLockPosition(float(position))
         self.log.info("Verouillage a la position : " + str(position))
         self.movidrive[motor].positionAtteinte = False

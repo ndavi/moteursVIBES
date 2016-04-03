@@ -21,8 +21,8 @@ class MotherboardServer(osc.OscServer):
 
     def start(self):
         self.log.info('MotherboardServer is starting.')
+        self.toClass.lockPosition(0,5.5)
         super(MotherboardServer, self).start()
-        # self.theEye = self.toClass.TheEye.auth()
 
     @make_method('/config/stage/moveMotor', 'if')
     @make_method('/config/stage/lockPosition', 'if')
