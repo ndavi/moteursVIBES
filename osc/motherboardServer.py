@@ -21,7 +21,6 @@ class MotherboardServer(osc.OscServer):
 
     def start(self):
         self.log.info('MotherboardServer is starting.')
-        self.toClass.lockPosition(0,5.5)
         super(MotherboardServer, self).start()
 
     @make_method('/config/stage/moveMotor', 'if')
