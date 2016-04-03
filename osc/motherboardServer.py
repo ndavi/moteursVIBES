@@ -4,6 +4,7 @@ import oscServer as osc
 from liblo import make_method, Address, Message
 import sys
 import logging
+
 logging.basicConfig()
 
 
@@ -21,8 +22,7 @@ class MotherboardServer(osc.OscServer):
     def start(self):
         self.log.info('MotherboardServer is starting.')
         super(MotherboardServer, self).start()
-        #self.theEye = self.toClass.TheEye.auth()
-
+        # self.theEye = self.toClass.TheEye.auth()
 
     @make_method('/config/stage/moveMotor', 'if')
     @make_method('/config/stage/lockPosition', 'if')
@@ -34,57 +34,52 @@ class MotherboardServer(osc.OscServer):
     @make_method('/config/stage/parkAll', None)
     @make_method('/config/stage/unparkAll', None)
     @make_method('/config/stage/resetAll', None)
-    #@make_method('/config/stage/stopAll', None)
+    # @make_method('/config/stage/stopAll', None)
     def configStageCallback(self, path, args, types, sender):
         if '/stage' in path:
             if '/unparkAll' in path:
-		if self.toClass.sender == None:
+                if self.toClass.sender == None:
                     self.toClass.sender = sender
-                rtn = self.toClass.unparkAll()
-                #self.heartbeat(sender, rtn)
+                self.toClass.unparkAll()
             elif '/parkAll' in path:
-		if self.toClass.sender == None:
+                if self.toClass.sender == None:
                     self.toClass.sender = sender
-                rtn = self.toClass.parkAll()
-                #self.heartbeat(sender, rtn)
-            #elif '/stopAll' in path:
-                #rtn = self.toClass.stopAll()
-                #self.heartbeat(sender, rtn)
+                self.toClass.parkAll()
             elif '/resetAll' in path:
                 self.toClass.resetAll()
             elif '/moveMotor' in path:
                 motor, speed = args
                 rtn = self.toClass.moveMotor(motor, speed)
-                if(rtn != None and rtn != False and rtn != True and self.toClass.sender != None):
+                if (rtn != None and rtn != False and rtn != True and self.toClass.sender != None):
                     msgDistanceDeBase = Message("/config/stage/distanceDeBase" + str(motor))
                     msgDistanceDeBase.add(rtn)
-                    self.send(self.toClass.sender,msgDistanceDeBase)
+                    self.send(self.toClass.sender, msgDistanceDeBase)
             elif '/lockPosition' in path:
                 motor, position = args
-                self.toClass.lockPosition(motor,position)
+                self.toClass.lockPosition(motor, position)
             elif '/setMinAcceleration' in path:
                 motor, pourcentage = args
-                self.toClass.setMinAcceleration(motor,pourcentage)
+                self.toClass.setMinAcceleration(motor, pourcentage)
             elif '/setMaxAcceleration' in path:
                 motor, pourcentage = args
-                self.toClass.setMaxAcceleration(motor,pourcentage)
+                self.toClass.setMaxAcceleration(motor, pourcentage)
             elif '/setMinMargeVitesse' in path:
                 motor, pourcentage = args
-                self.toClass.setMinMargeVitesse(motor,pourcentage)
+                self.toClass.setMinMargeVitesse(motor, pourcentage)
             elif '/setMaxMargeVitesse' in path:
                 motor, pourcentage = args
-                self.toClass.setMaxMargeVitesse(motor,pourcentage)
+                self.toClass.setMaxMargeVitesse(motor, pourcentage)
             elif '/setReductionVitesse' in path:
                 isSet, = args
-                self.log.info("Passe dans reduc vitesse" + str(isSet))
-                if(isSet == 1):
+                if (isSet == 1):
                     self.toClass.reductionVitesse = True
                     self.log.info("Reduction de vitesse activee")
-                elif(isSet == 0):
+                elif (isSet == 0):
                     self.toClass.reductionVitesse = False
                     self.log.info("Reduction de vitesse desactivee")
 
-    @make_method(None, None)
-    def defaultCallback(self, path, args, types, sender):
-        self.log.warn('Unknown command: %s %s' % (path, ','.join([str(i) for i in args])))
-        #self.heartbeat(sender, False)
+
+@make_method(None, None)
+def defaultCallback(self, path, args, types, sender):
+    self.log.warn('Unknown command: %s %s' % (path, ','.join([str(i) for i in args])))
+    # self.heartbeat(sender, False)

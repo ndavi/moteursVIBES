@@ -55,20 +55,23 @@ class Conf(object):
 
     def _getLinesFromFile(self, path):
         if self._pathExist(path):
-            lines = getLinesFromFile(path)
+            lines = self.getLinesFromFile(path)
             if lines:
                 self.log.debug('Lines readed from %s.' % path)
                 return lines
             self.log.warn('Unable to read %s.' % path)
         return False
 
-def getLinesFromFile(path):
-    try:
-        with open(path, 'r') as f:
-            lines = f.readlines()
-        return lines
-    except:
-        return False
+    def getLinesFromFile(self,path):
+        try:
+            with open(path, 'r') as f:
+                lines = list()
+                for line in f:
+                    lines.append(line.rstrip('\n\r'))
+            return lines
+        except Exception as e:
+            self.log.info("Error when reading files : " + e.message)
+            return False
 
 import os.path as path
 

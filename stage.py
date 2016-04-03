@@ -12,7 +12,7 @@ from liblo import Message
 
 import logging
 logging.basicConfig()
-
+import config
 
 class Stage(object):
     def __init__(self, modbusInstance, workingDir=None):
@@ -28,7 +28,10 @@ class Stage(object):
         self.DFE33B = self.modbusInstance.dfe
         self.movidrive = list()
         self.distanceDeBase = 0
-        self.vitesseMoteurs = [0,0,0];
+        self.vitesseMoteurs = [0,0,0]
+        self.config = config.Conf(path.join(workingDir,'config.cfg'))
+        self.limiteMoteurs = self.config.loadLastConfig()
+        print(self.limiteMoteurs)
         for mv in self.modbusInstance.movidrive:
             self.movidrive.append(mv)
 
@@ -86,6 +89,7 @@ class Stage(object):
             self.log.info("Exception dans movemotor : " + e.message)
             return False
         return distanceDeBase
+
     def modificationVitesse(self,speed,i,pourcentageDistance):
         #self.log.info("Apres : " + str(pourcentageDistance) + "val min : " + str(self.movidrive[i].valeurMinVariationVitesse))
         if(pourcentageDistance < self.movidrive[i].valeurMinVariationVitesse):
@@ -110,9 +114,10 @@ class Stage(object):
         self.DFE33B.setStatus(resetAll=False)
         self.DFE33B.setStatus(resetAll=True)
         self.DFE33B.setStatus(resetAll=False)
+
     def lockPosition(self, motor, position):
         self.movidrive[motor].setLockPosition(float(position))
-        self.log.debug("Verouillage a la position : " + str(position))
+        self.log.info("Verouillage a la position : " + str(position))
         self.movidrive[motor].positionAtteinte = False
         positions = self.getPositions()
         positionMoteur = positions[motor]

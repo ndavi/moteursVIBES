@@ -78,7 +78,7 @@ class Motherboard(object):
                         returnMsg = Message('/config/stage/getMotor' + str(i))
                         returnMsg.add(positions[i])
                         movidrive.position = positions[i]
-			#self.log.info("Envoie position " + str(movidrive.position))
+			            #self.log.info("Envoie position " + str(movidrive.position))
                         self.osc.send(self.stage.sender,returnMsg)
                         if(movidrive.getLockPosition() != None):
                             if (positions != False):
