@@ -1,0 +1,57 @@
+#!/usr/bin/python2
+
+import osc
+
+import os.path as path
+import logging
+logging.basicConfig(format='%(asctime)s %(message)s')
+
+class MotherboardConfig(object):
+    workingDir = path.dirname(path.realpath(__file__))
+
+    def __init__(self):
+        logFormat = logging.Formatter('%(asctime)s %(name)s - %(levelname)s: %(message)s')
+        self.log = logging.getLogger('motherboard')
+        self.log.setLevel(logging.INFO)
+        self.filelog = logging.FileHandler(path.join(MotherboardConfig.workingDir, './log/motherboardConfig.log'))
+        self.filelog.setLevel(logging.INFO)
+        self.filelog.setFormatter(logFormat)
+        self.log.addHandler(self.filelog)
+
+        self.debuglog = logging.FileHandler(path.join(MotherboardConfig.workingDir, './log/motherboardConfig.debug.log'))
+        self.debuglog.setLevel(logging.DEBUG)
+        self.debuglog.setFormatter(logFormat)
+        self.log.addHandler(self.debuglog)
+
+        self.osc = osc.MotherboardServerConfig(7969,MotherboardConfig.workingDir)
+
+
+        self.osc.log = logging.getLogger('motherboard.osc')
+
+    @property
+    def ready(self):
+        if not self.osc.ready:
+            self.log.info('Osc module not ready.')
+            return False
+        return True
+
+    def start(self):
+        self.log.info('Starting main module.')
+        if self.ready:
+            self.osc.start()
+            return True
+        return False
+
+    def run(self):
+        while True:
+            pass
+
+if __name__ == "__main__":
+    # Init motherboard
+    mb = MotherboardConfig()
+    #mb.config.loadLastConfig()
+    #mb.config.load()
+    # Start motherboard
+    mb.start()
+
+    mb.run()

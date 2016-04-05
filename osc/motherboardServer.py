@@ -20,7 +20,7 @@ class MotherboardServer(osc.OscServer):
         self.theEye = None
 
     def start(self):
-        self.log.info('MotherboardServer is starting.')
+        self.log.info('Le service des moteurs demarre.')
         super(MotherboardServer, self).start()
 
     @make_method('/config/stage/moveMotor', 'if')

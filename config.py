@@ -5,18 +5,45 @@ from collections import OrderedDict
 
 import logging
 
-
 class Conf(object):
     def __init__(self, basePath=None):
+        logging.basicConfig(format='%(asctime)s %(message)s')
         self.log = logging.getLogger('conf')
-
+        self.config = None
         self.path = basePath
 
 
     def loadLastConfig(self):
-            if self.log:
-                self.log.info('Loading last config.')
-            return self.parse(self.path)
+        self.log("lalalaal")
+        if self.log:
+            self.log.info('Loading last config.')
+        self.config = self.parse()
+        return self.config
+
+    def format(self):
+        if self.config:
+            lines = list()
+            for k, l in self.config.items():
+                l = [str(i) for i in l]
+                lines.append('%s=%s' % (k, ','.join(l),))
+            rtn = '\n'.join(lines)
+            return rtn
+        else:
+            return False
+
+    def save(self):
+        if self.config:
+            c = self.format()
+            print(c)
+            if self.path:
+                self.log.info('Saving config to %s.' % self.path)
+                rtn = self._setLinesToFile(c)
+            else:
+                self.log.warning('No config file specified.')
+                rtn = False
+            return rtn
+        else:
+            return False
 
     def load(self, p=None):
         if self.config:
@@ -27,8 +54,8 @@ class Conf(object):
             self.log.debug('Config not loaded.')
             return False
 
-    def parse(self, path):
-        raw = self._getLinesFromFile(path)
+    def parse(self):
+        raw = self._getLinesFromFile(self.path)
         if not raw or raw == '':
             if self.log:
                 self.log.warning('Config file empty.')
@@ -62,6 +89,23 @@ class Conf(object):
             self.log.warn('Unable to read %s.' % path)
         return False
 
+    def _setLinesToFile(self, lines):
+
+        if self.setLinesToFile(lines):
+            self.log.debug('Lines writed to %s.' % path)
+            return True
+        else:
+            self.log.warn('Unable to write in %s.' % path)
+            return False
+
+    def setLinesToFile(self,lines):
+        try:
+            with open(self.path, 'w+') as f:
+                f.write(str(lines))
+            return True
+        except:
+            return False
+
     def getLinesFromFile(self,path):
         try:
             with open(path, 'r') as f:
@@ -73,9 +117,14 @@ class Conf(object):
             self.log.info("Error when reading files : " + e.message)
             return False
 
+
 import os.path as path
 
 if __name__ == "__main__":
     workingDir = path.dirname(path.realpath(__file__))
     conf = Conf(path.join(workingDir,'config.cfg'))
-    print (conf.loadLastConfig())
+    #print (conf.loadLastConfig())
+    dict = OrderedDict([('apple', [1,6]), ('banana', [1,6]), ('orange', [1,6]), ('pear', [1,6])])
+    conf.config = dict
+    conf.save()
+    print("passe")
