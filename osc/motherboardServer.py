@@ -29,7 +29,8 @@ class MotherboardServer(osc.OscServer):
     @make_method('/config/stage/setMaxAcceleration', 'if')
     @make_method('/config/stage/setMinMargeVitesse', 'if')
     @make_method('/config/stage/setMaxMargeVitesse', 'if')
-    @make_method('/config/stage/setSendDistanceDeBase', 'if')
+    @make_method('/config/stage/parkSolo', 'ii')
+    @make_method('/config/stage/unpark', 'i')
     @make_method('/config/stage/setReductionVitesse', 'i')
     @make_method('/config/stage/parkAll', None)
     @make_method('/config/stage/unparkAll', None)
@@ -45,14 +46,22 @@ class MotherboardServer(osc.OscServer):
                 if self.toClass.sender == None:
                     self.toClass.sender = sender
                 self.toClass.parkAll()
+            elif '/parkSolo' in path:
+                motor, isParked = args
+                retour = self.toClass.parkSolo(motor,isParked)
+                msgEtatParkage = Message("/config/stage/parkSoloReturn" + str(motor))
+                msgEtatParkage.add(retour)
+                self.send(self.toClass.sender, msgEtatParkage)
             elif '/resetAll' in path:
                 self.toClass.resetAll()
             elif '/moveMotor' in path:
                 motor, speed = args
                 rtn = self.toClass.moveMotor(motor, speed)
-                if (rtn != None and rtn != False and rtn != True
-                    and self.toClass.sender != None
-                    and self.toClass.movidrive[motor].sendDistanceDeBase == True):
+                #if rtn == "sendParkReturn":
+                    #msgEtatParkage = Message("/config/stage/parkSoloReturn" + str(motor))
+                    #msgEtatParkage.add(True)
+                    #self.send(self.toClass.sender,msgEtatParkage)
+                if (rtn != None and rtn != False and rtn != True and self.toClass.sender != None):
                     msgDistanceDeBase = Message("/config/stage/distanceDeBase" + str(motor))
                     msgDistanceDeBase.add(rtn)
                     self.send(self.toClass.sender, msgDistanceDeBase)
@@ -79,12 +88,6 @@ class MotherboardServer(osc.OscServer):
                 elif (isSet == 0):
                     self.toClass.reductionVitesse = False
                     self.log.info("Reduction de vitesse desactivee")
-            elif '/setSendDistanceDeBase' in path:
-                motor, isSet = args
-                if(isSet == 1):
-                    self.toClass.movidrive[motor].sendDistanceDeBase = True
-                elif (isSet == 0):
-                    self.toClass.movidrive[motor].sendDistanceDeBase = False
 
 
     @make_method(None, None)

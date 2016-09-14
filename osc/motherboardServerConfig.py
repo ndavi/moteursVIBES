@@ -37,4 +37,5 @@ class MotherboardServerConfig(osc.OscServer):
 
     @make_method(None, None)
     def defaultCallback(self, path, args, types, sender):
+        print("cc")
         self.log.warn('Unknown command: %s %s' % (path, ','.join([str(i) for i in args])))

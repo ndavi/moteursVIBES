@@ -10,12 +10,13 @@ logging.basicConfig(format='%(asctime)s %(message)s')
 
 from time import sleep
 from liblo import Message
-
+import time
+import sys, traceback
 class Motherboard(object):
     workingDir = path.dirname(path.realpath(__file__))
 
     def __init__(self):
-        self.interval = 0.1 #second
+        self.interval = 0.3 #second
         logFormat = logging.Formatter('%(asctime)s %(name)s - %(levelname)s: %(message)s')
         self.log = logging.getLogger('motherboard')
         self.log.setLevel(logging.INFO)
@@ -25,6 +26,7 @@ class Motherboard(object):
         self.filelog.setLevel(logging.INFO)
         self.filelog.setFormatter(logFormat)
         self.log.addHandler(self.filelog)
+        self.timerParkage = time.time()
 
         self.debuglog = logging.FileHandler(path.join(Motherboard.workingDir, './log/motherboard.debug.log'))
         self.debuglog.setLevel(logging.DEBUG)
@@ -92,6 +94,28 @@ class Motherboard(object):
                         i = i + 1
                 except Exception as e:
                     self.log.debug("Demande de position trop rapide " + str(e))
+                try:
+                    if(self.stage.parked is False):
+                        for it in (0,1,2):
+                            if self.stage.isTimerActivated[it] is True and self.stage.movidrive[it].isAutoParked == False:
+                                if((time.time() - self.stage.timerParkage[it]) >= 10):
+                                    self.log.info("Parkage automatique du moteur " + str(it))
+                                    self.stage.parkSolo(it,True)
+                                    self.stage.isTimerActivated[it] = False
+                                    self.stage.movidrive[it].isAutoParked = True
+                                    #msgEtatParkage = Message("/config/stage/parkSoloReturn" + str(it))
+                                    #msgEtatParkage.add(True)
+                                    #self.osc.send(self.stage.sender,msgEtatParkage)
+                                else:
+                                    self.log.info("Timer parkage :" + "Moteur " + str(it) + " " + str(time.time() - self.stage.timerParkage[it]))
+                            elif self.stage.isTimerActivated[it] is False and self.stage.movidrive[it].isAutoParked == False:
+                                self.stage.timerParkage[it] = time.time()
+                                self.stage.isTimerActivated[it] = True
+                except Exception as e:
+                    self.log.info(e.message)
+                    ex_type, ex, tb = sys.exc_info()
+                    traceback.print_tb(tb)
+                    self.log.info(e.message)
             #self.log.info("Load average : " + str(open("/proc/loadavg").readline().split(" ")[:3]))
             sleep(self.interval)
 

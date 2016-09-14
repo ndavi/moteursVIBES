@@ -13,11 +13,13 @@ from liblo import Message
 import logging
 logging.basicConfig()
 import config
-
+import time
 class Stage(object):
     def __init__(self, modbusInstance, workingDir=None):
         self.workingDir = workingDir
         self.sender = None
+        self.timerParkage = [time.time(),time.time(),time.time()]
+        self.isTimerActivated = [True,True,True]
         self.margeError = 0.1
         self.motorOffset = 475 # mm
         self.log = logging.getLogger('stage')
@@ -32,6 +34,7 @@ class Stage(object):
         self.config = config.Conf(path.join(workingDir,'config.cfg'))
         self.limiteMoteurs = self.config.loadLastConfig()
         print(self.limiteMoteurs)
+        print(self.isTimerActivated)
         for mv in self.modbusInstance.movidrive:
             self.movidrive.append(mv)
 
@@ -45,7 +48,16 @@ class Stage(object):
         self.DFE33B.setStatus(lockAll=False)
         self.parked = False
         self.log.info("Unparkage des moteurs")
+        for i in (0,1,2):
+            self.timerParkage[i] = time.time()
         return True
+    def parkSolo(self,motor,isParked):
+        if(isParked == 1):
+            self.movidrive[motor].setStatus(lock=True)
+            return True
+        elif(isParked == 0):
+            self.movidrive[motor].setStatus(lock=False)
+            return False
 
     def moveMotor(self, i, speed):
         try:
@@ -54,9 +66,32 @@ class Stage(object):
                 self.movidrive[i].setSpeed(0)
                 return False
             if speed == 0 or self.movidrive[i].positionAtteinte == True:
+                # try:
+                #     if self.isTimerActivated[i] is True and self.movidrive[i].isAutoParked == False:
+                #         if((time.time() - self.timerParkage[i]) >= 30):
+                #             self.log.info("Parkage automatique du moteur " + str(i))
+                #             self.parkSolo(i,True)
+                #             self.isTimerActivated[i] = False
+                #             self.movidrive[i].isAutoParked = True
+                #             return "sendParkReturn"
+                #         else:
+                #             self.log.info("Timer parkage :" + "Moteur " + str(i) + " " + str(time.time() - self.timerParkage[i]))
+                #     elif self.isTimerActivated[i] is False and self.movidrive[i].isAutoParked == False:
+                #         self.timerParkage[i] = time.time()
+                #         self.isTimerActivated[i] = True
+                # except Exception as e:
+                #      ex_type, ex, tb = sys.exc_info()
+                #      traceback.print_tb(tb)
+                #      self.log.info(e.message)
+
                 self.movidrive[i].setSpeed(0)
                 distanceDeBase = self.movidrive[i].distanceToLockPosition
             else:
+                if(self.movidrive[i].isAutoParked == True):
+                    self.movidrive[i].isAutoParked = False
+                    self.parkSolo(i,False)
+                    self.log.info("Deparkage automatique")
+                self.isTimerActivated[i] = False
                 difference = self.movidrive[i].getLockPosition() - positionMoteur
                 distanceDeBase = self.movidrive[i].distanceToLockPosition
                 distanceCalcul = difference
@@ -116,11 +151,11 @@ class Stage(object):
         self.DFE33B.setStatus(resetAll=False)
 
     def lockPosition(self, motor, position):
-        if float(self.limiteMoteurs["moteur" + str(motor)][0]) > float(position) or float(self.limiteMoteurs["moteur" + str(motor)][1]) < float(position) :
+        if float(self.limiteMoteurs["moteur" + str(motor)][0]) - 0.2 > float(position) or float(self.limiteMoteurs["moteur" + str(motor)][1]) + 0.2 < float(position) :
             self.log.info("Depassement de la limite sur le moteur " + str(motor) + " position : " + str(position))
             return False
         self.movidrive[motor].setLockPosition(float(position))
-        self.log.info("Verouillage a la position : " + str(position))
+        self.log.info("Verouillage du moteur : " + str(motor) + " a la position : " + str(position))
         self.movidrive[motor].positionAtteinte = False
         positions = self.getPositions()
         positionMoteur = positions[motor]
