@@ -7,14 +7,13 @@ import logging
 
 class Conf(object):
     def __init__(self, basePath=None):
-        logging.basicConfig(format='%(asctime)s %(message)s')
         self.log = logging.getLogger('conf')
         self.config = None
         self.path = basePath
 
 
     def loadLastConfig(self):
-        self.log("lalalaal")
+        #self.log("lalalaal")
         if self.log:
             self.log.info('Loading last config.')
         self.config = self.parse()

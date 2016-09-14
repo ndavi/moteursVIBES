@@ -11,8 +11,8 @@ logging.basicConfig()
 
 
 class MotherboardServerConfig(osc.OscServer):
-    def __init__(self, port=7969):
-        workingDir = path.dirname(path.realpath(__file__))
+    def __init__(self,workingdir, port=7969):
+        workingDir = workingdir
         super(MotherboardServerConfig, self).__init__(port)
         self.log = logging.getLogger('motherboard.osc')
         self.feedback = False
@@ -23,17 +23,18 @@ class MotherboardServerConfig(osc.OscServer):
         self.log.info('Le service de configuration des moteurs demarre.')
         super(MotherboardServerConfig, self).start()
 
-    @make_method('/config/stage/lockMotor', 'iff')
+    @make_method('/config/stage/setLockPosition', 'ffff')
     def configStageCallback(self, path, args, types, sender):
         if '/stage' in path:
-            if '/lockMotor' in path:
-                motor, min, max = args
+            if '/setLockPosition' in path:
+                motor, min, max,wtf = args
+                self.log.info("Verouillage moteur")
                 configToMod = self.config.loadLastConfig()
-                configToMod["moteur" + str(motor)] = [min, max]
+                configToMod["moteur" + str(int(motor))] = [min, max]
                 self.config.config = configToMod
                 self.config.save()
 
 
-@make_method(None, None)
-def defaultCallback(self, path, args, types, sender):
-    self.log.warn('Unknown command: %s %s' % (path, ','.join([str(i) for i in args])))
+    @make_method(None, None)
+    def defaultCallback(self, path, args, types, sender):
+        self.log.warn('Unknown command: %s %s' % (path, ','.join([str(i) for i in args])))

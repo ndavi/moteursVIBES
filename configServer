@@ -23,7 +23,7 @@ class MotherboardConfig(object):
         self.debuglog.setFormatter(logFormat)
         self.log.addHandler(self.debuglog)
 
-        self.osc = osc.MotherboardServerConfig(7969,MotherboardConfig.workingDir)
+        self.osc = osc.MotherboardServerConfig(MotherboardConfig.workingDir,7969)
 
 
         self.osc.log = logging.getLogger('motherboard.osc')

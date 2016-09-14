@@ -29,6 +29,7 @@ class MotherboardServer(osc.OscServer):
     @make_method('/config/stage/setMaxAcceleration', 'if')
     @make_method('/config/stage/setMinMargeVitesse', 'if')
     @make_method('/config/stage/setMaxMargeVitesse', 'if')
+    @make_method('/config/stage/setSendDistanceDeBase', 'if')
     @make_method('/config/stage/setReductionVitesse', 'i')
     @make_method('/config/stage/parkAll', None)
     @make_method('/config/stage/unparkAll', None)
@@ -49,7 +50,9 @@ class MotherboardServer(osc.OscServer):
             elif '/moveMotor' in path:
                 motor, speed = args
                 rtn = self.toClass.moveMotor(motor, speed)
-                if (rtn != None and rtn != False and rtn != True and self.toClass.sender != None):
+                if (rtn != None and rtn != False and rtn != True
+                    and self.toClass.sender != None
+                    and self.toClass.movidrive[motor].sendDistanceDeBase == True):
                     msgDistanceDeBase = Message("/config/stage/distanceDeBase" + str(motor))
                     msgDistanceDeBase.add(rtn)
                     self.send(self.toClass.sender, msgDistanceDeBase)
@@ -76,9 +79,15 @@ class MotherboardServer(osc.OscServer):
                 elif (isSet == 0):
                     self.toClass.reductionVitesse = False
                     self.log.info("Reduction de vitesse desactivee")
+            elif '/setSendDistanceDeBase' in path:
+                motor, isSet = args
+                if(isSet == 1):
+                    self.toClass.movidrive[motor].sendDistanceDeBase = True
+                elif (isSet == 0):
+                    self.toClass.movidrive[motor].sendDistanceDeBase = False
 
 
-@make_method(None, None)
-def defaultCallback(self, path, args, types, sender):
-    self.log.warn('Unknown command: %s %s' % (path, ','.join([str(i) for i in args])))
-    # self.heartbeat(sender, False)
+    @make_method(None, None)
+    def defaultCallback(self, path, args, types, sender):
+        self.log.warn('Unknown command: %s %s' % (path, ','.join([str(i) for i in args])))
+        # self.heartbeat(sender, False)
