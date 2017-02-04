@@ -433,6 +433,7 @@ class Movidrive(object):
         self.unit_id = unit_id
         self.lockPosition = None
         self.position = None
+        self.sens = "avance"
         self.positionAtteinte = True
         self.valeurMinVariationVitesse = 0.2
         self.valeurMaxVariationVitesse = 0.8

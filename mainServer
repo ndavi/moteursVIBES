@@ -3,6 +3,7 @@
 import stage
 import osc
 import modbus
+import math
 
 import os.path as path
 import logging
@@ -12,6 +13,8 @@ from time import sleep
 from liblo import Message
 import time
 import sys, traceback
+from artnetSender import ArtNetSender
+
 class Motherboard(object):
     workingDir = path.dirname(path.realpath(__file__))
 
@@ -36,6 +39,7 @@ class Motherboard(object):
         self.modbus = modbus.ModbusBackend()
         self.stage = stage.Stage(self.modbus, workingDir=Motherboard.workingDir)
         self.osc = osc.MotherboardServer(self.stage, 7969)
+        self.artnetSender = ArtNetSender()
         #self.config = utils.Conf((self.stage, self.osc, self.modbus,), Motherboard.workingDir)
 
        # self.config.log = logging.getLogger('motherboard.conf')
@@ -69,8 +73,27 @@ class Motherboard(object):
             return True
         return False
 
+    def sendArtNetToGrandMA(self,movidrive, positions, i):
+        #On estime que le minimum est à zero
+        position = positions[i]
+        limite = float(self.limiteMoteurs["moteur" + str(i)][1])
+        pourcentageDistance = position/limite
+        dmxVal = math.ceil(pourcentageDistance * 255)
+        print(dmxVal)
+        self.artnetSender.packet.frame[1] = dmxVal
+
+    def testSendArtNetToGrandMA(self):
+        position = 2
+        i = 0
+        limite = float(self.stage.limiteMoteurs["moteur" + str(i)][1])
+        pourcentageDistance = position / limite
+        dmxVal = math.ceil(pourcentageDistance * 255)
+        print(dmxVal)
+        self.artnetSender.packet.frame[1] = int(dmxVal)
+
     def run(self):
         while True:
+            self.testSendArtNetToGrandMA()
             if(self.stage.sender != None):
                 #self.log.debug("Envoie des positions")
                 positions = self.stage.getPositions()
@@ -91,6 +114,8 @@ class Motherboard(object):
                                     msg = Message('/config/stage/destinationAtteinte' + str(i))
                                     msg.add(1)
                                     self.osc.send(self.stage.sender,msg)
+                                    #ArtnetSend
+                                    self.sendArtNetToGrandMA(movidrive, positions, i)
                         i = i + 1
                 except Exception as e:
                     self.log.debug("Demande de position trop rapide " + str(e))

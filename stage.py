@@ -108,9 +108,11 @@ class Stage(object):
                     speed = self.modificationVitesse(speed,i,pourcentageDistance)
                 self.log.debug("Difference : " + str(difference))
                 if(difference < self.margeError * -1):
+                    self.movidrive[i].sens = "avance"
                     self.log.debug("Le moteur avance : " + str(difference))
                     speed = float(speed) * -1
                 if(difference > self.margeError):
+                    self.movidrive[i].sens = "recule"
                     self.log.debug("Le moteur recule : " + str(difference))
                 else:
                     self.log.debug("Dans la marge d'erreur : " + str(positionMoteur) + " " + str(self.movidrive[i].getLockPosition()))
