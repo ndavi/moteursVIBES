@@ -74,14 +74,20 @@ class Motherboard(object):
         return False
 
     def sendArtNetToGrandMA(self,movidrive, positions, i):
-        #On estime que le minimum est à zero
-        position = positions[i]
-        limite = float(self.limiteMoteurs["moteur" + str(i)][1])
-        pourcentageDistance = position/limite
-        dmxVal = math.ceil(pourcentageDistance * 255)
-        print(dmxVal)
-        self.artnetSender.packet.frame[1] = dmxVal
-
+        try:
+            #On estime que le minimum est a zero
+            position = positions[i]
+            if(position < 0):
+                position = position * -1
+            limite = float(self.stage.limiteMoteurs["moteur" + str(i)][0])
+            limite = limite * -1
+            pourcentageDistance = position/limite
+            dmxVal = math.ceil(pourcentageDistance * 255)
+            print(dmxVal)
+            self.artnetSender.packet.frame[i + 17] = int(dmxVal)
+            self.artnetSender.sendFrames()
+        except Exception as e:
+            self.log.warning("Erreur lors du calcul artnet " + str(e))
     def testSendArtNetToGrandMA(self):
         position = 2
         i = 0
@@ -90,10 +96,11 @@ class Motherboard(object):
         dmxVal = math.ceil(pourcentageDistance * 255)
         print(dmxVal)
         self.artnetSender.packet.frame[1] = int(dmxVal)
+        self.artnetSender.sendFrames()
 
     def run(self):
         while True:
-            self.testSendArtNetToGrandMA()
+            #self.testSendArtNetToGrandMA()
             if(self.stage.sender != None):
                 #self.log.debug("Envoie des positions")
                 positions = self.stage.getPositions()
@@ -103,7 +110,10 @@ class Motherboard(object):
                         returnMsg = Message('/config/stage/getMotor' + str(i))
                         returnMsg.add(positions[i])
                         movidrive.position = positions[i]
-			            #self.log.info("Envoie position " + str(movidrive.position))
+                        if(i == 1):
+                            pass
+                        self.sendArtNetToGrandMA(movidrive, positions, i)
+                        #self.log.info("Envoie position " + str(movidrive.position))
                         self.osc.send(self.stage.sender,returnMsg)
                         if(movidrive.getLockPosition() != None):
                             if (positions != False):
@@ -115,10 +125,9 @@ class Motherboard(object):
                                     msg.add(1)
                                     self.osc.send(self.stage.sender,msg)
                                     #ArtnetSend
-                                    self.sendArtNetToGrandMA(movidrive, positions, i)
                         i = i + 1
                 except Exception as e:
-                    self.log.debug("Demande de position trop rapide " + str(e))
+                    self.log.warning("Demande de position trop rapide " + str(e))
                 try:
                     if(self.stage.parked is False):
                         for it in (0,1,2):
