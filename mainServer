@@ -84,7 +84,7 @@ class Motherboard(object):
             pourcentageDistance = position/limite
             dmxVal = math.ceil(pourcentageDistance * 255)
             print(dmxVal)
-            self.artnetSender.packet.frame[i + 17] = int(dmxVal)
+            self.artnetSender.packet.frame[i] = int(dmxVal)
             self.artnetSender.sendFrames()
         except Exception as e:
             self.log.warning("Erreur lors du calcul artnet " + str(e))
