@@ -79,11 +79,11 @@ class Motherboard(object):
             position = positions[i]
             if(position < 0):
                 position = position * -1
-            limite = float(self.stage.limiteMoteurs["moteur" + str(i)][0])
-            limite = limite * -1
+            #Limite inversee ici
+            limite = float(self.stage.limiteMoteurs["moteur" + str(i)][1])
+            print("Limite est : " + str(limite))
             pourcentageDistance = position/limite
             dmxVal = math.ceil(pourcentageDistance * 255)
-            print(dmxVal)
             self.artnetSender.packet.frame[i] = int(dmxVal)
             self.artnetSender.sendFrames()
         except Exception as e:
