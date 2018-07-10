@@ -25,8 +25,6 @@ class Motherboard(object):
         logFormat = logging.Formatter('%(asctime)s %(name)s - %(levelname)s: %(message)s')
         self.log = logging.getLogger('motherboard')
         self.log.setLevel(logging.INFO)
-        self.destinationInterval = 0.1  # second
-        self.getMotorIterator = 0
         self.filelog = logging.FileHandler(path.join(Motherboard.workingDir, './log/motherboard.log'))
         self.filelog.setLevel(logging.INFO)
         self.filelog.setFormatter(logFormat)
@@ -111,7 +109,7 @@ class Motherboard(object):
                         if movidrive.getLockPosition() is not None:
                             if (positions != False):
                                 difference = movidrive.getLockPosition() - positions[i]
-                                if self.stage.margeError > difference > self.stage.margeError * -1 and movidrive.positionAtteinte == False:
+                                if self.stage.margeError[i] > difference > self.stage.margeError[i] * -1 and movidrive.positionAtteinte == False:
                                     movidrive.positionAtteinte = True
                                     self.log.info("Destination atteinte")
                                     msg = Message('/config/stage/destinationAtteinte' + str(i))

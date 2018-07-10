@@ -20,7 +20,7 @@ class Stage(object):
         self.sender = None
         self.timerParkage = [time.time(),time.time(),time.time()]
         self.isTimerActivated = [True,True,True]
-        self.margeError = 0.1
+        self.margeError = [0.1, 0.1, 0.1]
         self.motorOffset = 475 # mm
         self.log = logging.getLogger('stage')
         self.parked = False
@@ -109,11 +109,11 @@ class Stage(object):
                 if(self.reductionVitesse):
                     speed = self.modificationVitesse(speed,i,pourcentageDistance)
                 self.log.debug("Difference : " + str(difference))
-                if(difference < self.margeError * -1):
+                if(difference < self.margeError[i] * -1):
                     self.movidrive[i].sens = "avance"
                     self.log.debug("Le moteur avance : " + str(difference))
                     speed = float(speed) * -1
-                if(difference > self.margeError):
+                if(difference > self.margeError[i]):
                     self.movidrive[i].sens = "recule"
                     self.log.debug("Le moteur recule : " + str(difference))
                 else:
@@ -155,7 +155,7 @@ class Stage(object):
         self.DFE33B.setStatus(resetAll=False)
 
     def lockPosition(self, motor, position):
-        if float(self.limiteMoteurs["moteur" + str(motor)][0]) - 0.2 > float(position) or float(self.limiteMoteurs["moteur" + str(motor)][1]) + 0.2 < float(position) :
+        if float(self.limiteMoteurs["moteur" + str(motor)][0]) - 0.2 > float(position) or float(self.limiteMoteurs["moteur" + str(motor)][1]) + 0.2 < float(position):
             self.log.info("Depassement de la limite sur le moteur " + str(motor) + " position : " + str(position))
             return False
         self.movidrive[motor].setLockPosition(float(position))
@@ -169,13 +169,17 @@ class Stage(object):
         self.movidrive[motor].distanceToLockPosition = difference
 
     def setMinAcceleration(self,motor,pourcentage):
+        self.log.info("Changement de minAcceleration a " + str(pourcentage) + " pour le moteur " + str(motor))
         self.movidrive[motor].valeurMinVariationVitesse = pourcentage
     def setMaxAcceleration(self,motor,pourcentage):
+        self.log.info("Changement de maxAcceleration a " + str(pourcentage) + " pour le moteur " + str(motor))
         self.movidrive[motor].valeurMaxVariationVitesse = pourcentage
 
     def setMinMargeVitesse(self,motor,pourcentage):
+        self.log.info("Changement de minMargeVitesse a " + str(pourcentage) + " pour le moteur " + str(motor))
         self.movidrive[motor].valeurMinMargeVitesse = pourcentage
     def setMaxMargeVitesse(self,motor,pourcentage):
+        self.log.info("Changement de maxMargeVitesse a " + str(pourcentage) + " pour le moteur " + str(motor))
         self.movidrive[motor].valeurMaxMargeVitesse = pourcentage
 
 

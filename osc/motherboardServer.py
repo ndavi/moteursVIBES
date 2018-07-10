@@ -9,10 +9,10 @@ logging.basicConfig()
 
 
 class MotherboardServer(osc.OscServer):
-    def __init__(self, toClass, port=7969):
+    def __init__(self, stage, port=7969):
         super(MotherboardServer, self).__init__(port)
         self.log = logging.getLogger('motherboard.osc')
-        self.toClass = toClass
+        self.stage = stage
         self.feedback = False
         self.feedbackPort = 7376
 
@@ -39,58 +39,72 @@ class MotherboardServer(osc.OscServer):
     def configStageCallback(self, path, args, types, sender):
         if '/stage' in path:
             if '/unparkAll' in path:
-                if self.toClass.sender is None:
-                    self.toClass.sender = sender
-                self.toClass.unparkAll()
+                if self.stage.sender is None:
+                    self.stage.sender = sender
+                self.stage.unparkAll()
             elif '/parkAll' in path:
-                if self.toClass.sender is None:
-                    self.toClass.sender = sender
-                self.toClass.parkAll()
+                if self.stage.sender is None:
+                    self.stage.sender = sender
+                self.stage.parkAll()
             elif '/parkSolo' in path:
                 motor, isParked = args
-                retour = self.toClass.parkSolo(motor,isParked)
+                retour = self.stage.parkSolo(motor, isParked)
                 msgEtatParkage = Message("/config/stage/parkSoloReturn" + str(motor))
                 msgEtatParkage.add(retour)
-                self.send(self.toClass.sender, msgEtatParkage)
+                self.send(self.stage.sender, msgEtatParkage)
             elif '/resetAll' in path:
-                self.toClass.resetAll()
+                self.stage.resetAll()
             elif '/moveMotor' in path:
                 motor, speed = args
-                rtn = self.toClass.moveMotor(motor, speed)
+                rtn = self.stage.moveMotor(motor, speed)
                 #if rtn == "sendParkReturn":
                     #msgEtatParkage = Message("/config/stage/parkSoloReturn" + str(motor))
                     #msgEtatParkage.add(True)
                     #self.send(self.toClass.sender,msgEtatParkage)
-                if (rtn is not None and rtn != False and rtn != True and self.toClass.sender is not None):
+                if (rtn is not None and rtn != False and rtn != True and self.stage.sender is not None):
                     msgDistanceDeBase = Message("/config/stage/distanceDeBase" + str(motor))
                     msgDistanceDeBase.add(rtn)
-                    self.send(self.toClass.sender, msgDistanceDeBase)
+                    self.send(self.stage.sender, msgDistanceDeBase)
             elif '/lockPosition' in path:
                 motor, position = args
-                self.toClass.lockPosition(motor, position)
+                self.stage.lockPosition(motor, position)
             elif '/setMinAcceleration' in path:
                 motor, pourcentage = args
-                self.toClass.setMinAcceleration(motor, pourcentage)
+                self.stage.setMinAcceleration(motor, pourcentage)
             elif '/setMaxAcceleration' in path:
                 motor, pourcentage = args
-                self.toClass.setMaxAcceleration(motor, pourcentage)
+                self.stage.setMaxAcceleration(motor, pourcentage)
             elif '/setMinMargeVitesse' in path:
                 motor, pourcentage = args
-                self.toClass.setMinMargeVitesse(motor, pourcentage)
+                self.stage.setMinMargeVitesse(motor, pourcentage)
             elif '/setMaxMargeVitesse' in path:
                 motor, pourcentage = args
-                self.toClass.setMaxMargeVitesse(motor, pourcentage)
+                self.stage.setMaxMargeVitesse(motor, pourcentage)
             elif '/setReductionVitesse' in path:
                 isSet, = args
                 if (isSet == 1):
-                    self.toClass.reductionVitesse = True
+                    self.stage.reductionVitesse = True
                     self.log.info("Reduction de vitesse activee")
                 elif (isSet == 0):
-                    self.toClass.reductionVitesse = False
+                    self.stage.reductionVitesse = False
                     self.log.info("Reduction de vitesse desactivee")
 
+
+    @make_method('/config/stage/setMargeDestination', 'ff')
+    def setMargeDestination(self, path, args, types, sender):
+            motor, value = args
+            if value < 0.05:
+                value = 0.05
+                self.log.error("Depassement - de la limite de marge d'erreur")
+            elif value > 0.1:
+                value = 0.1
+                self.log.error("Depassement  + de la limite de marge d'erreur ")
+            self.log.info("Changement de la marge d'erreur a " + str(value) + " pour le moteur " + str(motor))
+            self.stage.margeError[int(motor)] = value
 
     @make_method(None, None)
     def defaultCallback(self, path, args, types, sender):
         self.log.warn('Unknown command: %s %s' % (path, ','.join([str(i) for i in args])))
         # self.heartbeat(sender, False)
+
+
