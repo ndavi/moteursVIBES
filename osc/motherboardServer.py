@@ -39,11 +39,11 @@ class MotherboardServer(osc.OscServer):
     def configStageCallback(self, path, args, types, sender):
         if '/stage' in path:
             if '/unparkAll' in path:
-                if self.toClass.sender == None:
+                if self.toClass.sender is None:
                     self.toClass.sender = sender
                 self.toClass.unparkAll()
             elif '/parkAll' in path:
-                if self.toClass.sender == None:
+                if self.toClass.sender is None:
                     self.toClass.sender = sender
                 self.toClass.parkAll()
             elif '/parkSolo' in path:
@@ -61,7 +61,7 @@ class MotherboardServer(osc.OscServer):
                     #msgEtatParkage = Message("/config/stage/parkSoloReturn" + str(motor))
                     #msgEtatParkage.add(True)
                     #self.send(self.toClass.sender,msgEtatParkage)
-                if (rtn != None and rtn != False and rtn != True and self.toClass.sender != None):
+                if (rtn is not None and rtn != False and rtn != True and self.toClass.sender is not None):
                     msgDistanceDeBase = Message("/config/stage/distanceDeBase" + str(motor))
                     msgDistanceDeBase.add(rtn)
                     self.send(self.toClass.sender, msgDistanceDeBase)

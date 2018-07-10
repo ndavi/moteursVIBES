@@ -1,12 +1,13 @@
 #!/usr/bin/python2
 
-import stage
-import osc
-import modbus
-import math
-
-import os.path as path
 import logging
+import math
+import os.path as path
+
+import modbus
+import osc
+import stage
+
 logging.basicConfig(format='%(asctime)s %(message)s')
 
 from time import sleep
@@ -15,15 +16,16 @@ import time
 import sys, traceback
 from artnetSender import ArtNetSender
 
+
 class Motherboard(object):
     workingDir = path.dirname(path.realpath(__file__))
 
     def __init__(self):
-        self.interval = 0.3 #second
+        self.interval = 0.3  # second
         logFormat = logging.Formatter('%(asctime)s %(name)s - %(levelname)s: %(message)s')
         self.log = logging.getLogger('motherboard')
         self.log.setLevel(logging.INFO)
-        self.destinationInterval = 0.1 # second
+        self.destinationInterval = 0.1  # second
         self.getMotorIterator = 0
         self.filelog = logging.FileHandler(path.join(Motherboard.workingDir, './log/motherboard.log'))
         self.filelog.setLevel(logging.INFO)
@@ -40,19 +42,11 @@ class Motherboard(object):
         self.stage = stage.Stage(self.modbus, workingDir=Motherboard.workingDir)
         self.osc = osc.MotherboardServer(self.stage, 7969)
         self.artnetSender = ArtNetSender()
-        #self.config = utils.Conf((self.stage, self.osc, self.modbus,), Motherboard.workingDir)
 
-       # self.config.log = logging.getLogger('motherboard.conf')
         self.stage.log = logging.getLogger('motherboard.stage')
         self.osc.log = logging.getLogger('motherboard.osc')
         self.modbus.log = logging.getLogger('motherboard.modbus')
-
-
-        #self.osc.theEye = self.stage.TheEye.oscTarget
         self.stage.oscTarget = self.osc
-
-        # Load last config on startup
-        #self.loadLastConfig()
 
     @property
     def ready(self):
@@ -73,21 +67,22 @@ class Motherboard(object):
             return True
         return False
 
-    def sendArtNetToGrandMA(self,movidrive, positions, i):
+    def sendArtNetToGrandMA(self, movidrive, positions, i):
         try:
-            #On estime que le minimum est a zero
+            # On estime que le minimum est a zero
             position = positions[i]
-            if(position < 0):
+            if (position < 0):
                 position = position * -1
-            #Limite inversee ici
+            # Limite inversee ici
             limite = float(self.stage.limiteMoteurs["moteur" + str(i)][1])
             print("Limite est : " + str(limite))
-            pourcentageDistance = position/limite
+            pourcentageDistance = position / limite
             dmxVal = math.ceil(pourcentageDistance * 255)
             self.artnetSender.packet.frame[i] = int(dmxVal)
             self.artnetSender.sendFrames()
         except Exception as e:
             self.log.warning("Erreur lors du calcul artnet " + str(e))
+
     def testSendArtNetToGrandMA(self):
         position = 2
         i = 0
@@ -100,9 +95,7 @@ class Motherboard(object):
 
     def run(self):
         while True:
-            #self.testSendArtNetToGrandMA()
-            if(self.stage.sender != None):
-                #self.log.debug("Envoie des positions")
+            if self.stage.sender is not None:
                 positions = self.stage.getPositions()
                 i = 0
                 try:
@@ -110,39 +103,42 @@ class Motherboard(object):
                         returnMsg = Message('/config/stage/getMotor' + str(i))
                         returnMsg.add(positions[i])
                         movidrive.position = positions[i]
-                        if(i == 1):
+                        if (i == 1):
                             pass
-                        self.sendArtNetToGrandMA(movidrive, positions, i)
-                        #self.log.info("Envoie position " + str(movidrive.position))
-                        self.osc.send(self.stage.sender,returnMsg)
-                        if(movidrive.getLockPosition() != None):
+                        # self.sendArtNetToGrandMA(movidrive, positions, i)
+                        # self.log.info("Envoie position " + str(movidrive.position))
+                        self.osc.send(self.stage.sender, returnMsg)
+                        if movidrive.getLockPosition() is not None:
                             if (positions != False):
                                 difference = movidrive.getLockPosition() - positions[i]
-                                if(difference < self.stage.margeError and difference > self.stage.margeError * -1 and movidrive.positionAtteinte == False):
+                                if self.stage.margeError > difference > self.stage.margeError * -1 and movidrive.positionAtteinte == False:
                                     movidrive.positionAtteinte = True
                                     self.log.info("Destination atteinte")
                                     msg = Message('/config/stage/destinationAtteinte' + str(i))
                                     msg.add(1)
-                                    self.osc.send(self.stage.sender,msg)
-                                    #ArtnetSend
+                                    self.osc.send(self.stage.sender, msg)
+                                    # ArtnetSend
                         i = i + 1
                 except Exception as e:
                     self.log.warning("Demande de position trop rapide " + str(e))
                 try:
-                    if(self.stage.parked is False):
-                        for it in (0,1,2):
-                            if self.stage.isTimerActivated[it] is True and self.stage.movidrive[it].isAutoParked == False:
-                                if((time.time() - self.stage.timerParkage[it]) >= 10):
+                    if (self.stage.parked is False):
+                        for it in (0, 1, 2):
+                            if self.stage.isTimerActivated[it] is True and self.stage.movidrive[
+                                it].isAutoParked == False:
+                                if ((time.time() - self.stage.timerParkage[it]) >= 10):
                                     self.log.info("Parkage automatique du moteur " + str(it))
-                                    self.stage.parkSolo(it,True)
+                                    self.stage.parkSolo(it, True)
                                     self.stage.isTimerActivated[it] = False
                                     self.stage.movidrive[it].isAutoParked = True
-                                    #msgEtatParkage = Message("/config/stage/parkSoloReturn" + str(it))
-                                    #msgEtatParkage.add(True)
-                                    #self.osc.send(self.stage.sender,msgEtatParkage)
+                                    # msgEtatParkage = Message("/config/stage/parkSoloReturn" + str(it))
+                                    # msgEtatParkage.add(True)
+                                    # self.osc.send(self.stage.sender,msgEtatParkage)
                                 else:
-                                    self.log.info("Timer parkage :" + "Moteur " + str(it) + " " + str(time.time() - self.stage.timerParkage[it]))
-                            elif self.stage.isTimerActivated[it] is False and self.stage.movidrive[it].isAutoParked == False:
+                                    self.log.info("Timer parkage :" + "Moteur " + str(it) + " " + str(
+                                        time.time() - self.stage.timerParkage[it]))
+                            elif self.stage.isTimerActivated[it] is False and self.stage.movidrive[
+                                it].isAutoParked == False:
                                 self.stage.timerParkage[it] = time.time()
                                 self.stage.isTimerActivated[it] = True
                 except Exception as e:
@@ -150,15 +146,13 @@ class Motherboard(object):
                     ex_type, ex, tb = sys.exc_info()
                     traceback.print_tb(tb)
                     self.log.info(e.message)
-            #self.log.info("Load average : " + str(open("/proc/loadavg").readline().split(" ")[:3]))
+            # self.log.info("Load average : " + str(open("/proc/loadavg").readline().split(" ")[:3]))
             sleep(self.interval)
+
 
 if __name__ == "__main__":
     # Init motherboard
     mb = Motherboard()
-    #mb.config.loadLastConfig()
-    #mb.config.load()
-    # Start motherboard
     mb.start()
 
     mb.run()

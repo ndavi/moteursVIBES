@@ -33,6 +33,8 @@ class Stage(object):
         self.vitesseMoteurs = [0,0,0]
         self.config = config.Conf(path.join(workingDir,'config.cfg'))
         self.limiteMoteurs = self.config.loadLastConfig()
+        self.lastPositions = []
+        self.margeSecuriteDemandePosition = 0.5
         print(self.limiteMoteurs)
         print(self.isTimerActivated)
         for mv in self.modbusInstance.movidrive:
@@ -62,7 +64,7 @@ class Stage(object):
     def moveMotor(self, i, speed):
         try:
             positionMoteur = self.movidrive[i].position
-            if self.parked or self.movidrive[i].getLockPosition() == None or positionMoteur == None:
+            if self.parked or self.movidrive[i].getLockPosition() is None or positionMoteur is None:
                 self.movidrive[i].setSpeed(0)
                 return False
             if speed == 0 or self.movidrive[i].positionAtteinte == True:
@@ -116,7 +118,7 @@ class Stage(object):
                     self.log.debug("Le moteur recule : " + str(difference))
                 else:
                     self.log.debug("Dans la marge d'erreur : " + str(positionMoteur) + " " + str(self.movidrive[i].getLockPosition()))
-                if i >= 0 and i < len(self.movidrive):
+                if 0 <= i < len(self.movidrive):
                     self.vitesseMoteurs[i] = speed
                     self.log.info("Reception de movemotor, Vitesse du  moteur 0 : " + str(self.vitesseMoteurs[0])
                                   + " Vitesse du moteur 1 : " + str(self.vitesseMoteurs[1]) + " Vitesse du moteur 2 : " + str(self.vitesseMoteurs[2]) + "   Ce programme semble concatener")
@@ -184,7 +186,24 @@ class Stage(object):
 
     def getPositions(self):
         positions = self.DFE33B.getPositions()
+        if len(self.lastPositions) != 0:
+            self.compareLastPositions(positions)
+        if positions is not False:
+            self.lastPositions = positions
         return positions
+
+    def compareLastPositions(self, positions):
+        i = 0
+        if positions is not False:
+            for position in positions:
+                diffPosition = self.lastPositions[i] - position
+                if(diffPosition < 0):
+                    diffPosition = diffPosition * -1
+                if diffPosition > self.margeSecuriteDemandePosition:
+                    self.log.error("Depassement de la limite de securite : Arret du logiciel ; Depassement de " + str(diffPosition))
+                    exit(-2)
+                i = i + 1
+
 
     #def stopAll(self):
     #    if not self.testMode:
